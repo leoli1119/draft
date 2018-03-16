@@ -1,0 +1,297 @@
+import pandas as pd
+
+
+######## DataFrame 数据表
+pd.DataFrame(data,index = ind,columns = col) # (二维数据,index 行索引, columns 列索引)
+      data = np.random.randn(6,4)  #  二维数据
+      ind = [1,2,3,4,5,6]       #  index 行索引
+      col = list("abcd")        #  columns 列索引
+      df = pd.DataFrame(data,index = ind,columns = col)
+
+查看
+
+df.head(3) / df.tail(3)          # 查看frame中头部和尾部的行
+df.index / df.columns           # 显示索引、列
+df.index.values               # 组成索引列的数据
+df.values                   # 显示底层的numpy数据
+df.shape                    # 行个数,列个数
+
+运算
+df.describe()              # 对数据的快速统计汇总 (如每一列的元素个数,均值,最大最小值等)
+df.T                    # 对数据的转置
+
+map/apply
+map() 是一个Series的函数，将一个自定义函数应用于Series结构中的每个元素(elements)。
+apply()和applymap()是DataFrame结构中的函数，
+      apply()将一个函数作用于DataFrame中的每个行或者列
+	  applymap()是将函数做用于DataFrame中的所有元素(elements)
+
+排序
+df.sort_index()                              # 按照rowID进行排序，默认升序
+df.sore_index(axis=1,ascending=False)               # 按照columnID进行排序，设定为降序
+df.sort_values(by='a')                         # 以 a 列数据进行排序
+
+索引方法和属性
+df.index.is_monotonic     返回True，如果每一个元素都比它前面的元素大或相等
+df.index.is_unique       返回True，如果索引没有重复的值
+df.index.unique         计算索引的唯一值数组
+append         链接额外的索引对象，产生一个新的索引
+diff          计算索引的差集
+intersection      计算交集
+union         计算并集
+isin          计算出一个布尔数组表示每一个值是否包含在所传递的集合里
+  df["a"].isin([1.1, 3.2])   # 返回符合条件的行(过滤)
+delete        计算删除位置i的元素的索引
+drop         计算删除所传递的值后的索引
+insert        计算在位置i插入元素后的索引
+     DataFrame.insert(loc, column, value, allow_duplicates=False)
+         df.insert(1, 'bar', df['one'])  想要把一列插进中间某一处, 使用df.insert:
+
+
+
+
+
+drop('column_name',axis=1)  # 删除列
+df.index = df.index.values/1e9  # 替换index
+
+修改列名
+a.rename(columns={'A':'a', 'B':'b', 'C':'c'}, inplace = True)  将列名A,B,C替换为a,b,c
+
+选择数据
+
+df[]  #选择 行，列
+  选择行时, 可以使用整数切片、标签切片、<布尔数组>
+   df[:3]      整数切片
+   df[2:3]     整数切片  注: 整数切片优先级高于标签切片, 即如果行标签为整数时, 此时如 df[:3], df[2:3] 指整数切片
+   df['a':'c']   标签切片
+   df[df['A']>0]   # A列值大于0的行
+  选择列时, 可以使用标签索引、标签列表
+   df['A']
+   df[['A','B']]
+
+df.loc[], df.iloc[], df.ix[]  # 选择区域  # 只加一个参数时,则进行的是行选择 
+  df.loc[]  # 二维，先行后列  使用标签   可以使用标签索引、标签切片、标签列表、<布尔数组>  
+    df.loc['a', :]    df.loc[:, 'A']
+    df.loc['a':'d', :]    df.loc[:, 'A':'C']
+    df.loc[['a','b','c'], :]   df.loc[:, ['A','B','C']]
+    df.loc[df['A']>0, :]   
+  df.iloc[]  # 二维，先行后列  使用整数   可以使用整数索引、整数切片、整数列表、<布尔数组>
+    df.iloc[3, :]
+    df.iloc[:3, :]
+    df.iloc[[0,2,4], :]
+    df.iloc[df['A']>0, :]  
+  df.ix[]   # 二维，先行后列   可以使用整数索引、整数切片、整数列表、标签索引、标签切片、标签列表、<布尔数组>、
+    df.ix[0, :]         注: 标签的优先级高
+    df.ix[0:3, :]
+    df.ix[[0,1,2], :]
+    
+df.at[] df.iat[]  # 选择单元格
+  df.at[]  # 先行后列  使用标签
+    df.at['a', 'A']
+  df.iat[]  # 先行后列  使用整数
+    df.iat[0, 0]
+    
+读取数据文件
+pd.read_csv()
+   filepath_or_buffer : str，pathlib                                                          *****
+       第一个参数可为文件路径,当路径中含有中文字符时,需要使用Unicode字符
+  *****  设置分隔符  ******
+   sep : str, default ‘,’                                                                     *****
+       设置分隔符
+       默认为逗号,如果数据有为了对齐加了一些空格,将 skipinitialspace = True 可以忽略这些空格
+       如果数据使用空格/制表符分隔,可以不设 sep 参数,设 delim_whitespace  = True
+   skipinitialspace : boolean, default False                                                  ******
+       忽略分隔符后的空白（默认为False，即不忽略）.
+   delimiter : str, default None
+       定界符
+       备选分隔符（如果指定该参数，则sep参数失效）
+   delim_whitespace : boolean, default False.                                                 *****
+       指定空格(例如’\s‘或者’\t‘)是否作为分隔符使用
+       等效于设定sep='\s+'。如果这个参数设定为Ture那么delimiter 参数失效。
+  *****  行/列标签  *****
+   header : int or list of ints, default ‘infer’
+       指定用来作为列名的行号,并且其最大的行号作为数据解析的起始行
+       当header=0,names参数没有指定时,采用默认值
+       如果数据文件中没有列标题行，就需要执行header=None
+   names : array-like, default None
+       指定列名
+   index_col : int or sequence or False, default None
+       指定用来作为行标签的列号
+   usecols : array-like, default None
+       指定要读入的列
+   squeeze : boolean, default False
+       如果文件值包含一列，则返回一个Series
+   prefix : str, default None
+       在没有列标题时，给列号添加前缀。例如：添加‘X’ 成为 X0, X1, ...
+  *****  解析数据  *****
+   dtype : Type name or dict of column -> type, default None
+       指定每列数据的数据类型。例如 {‘a’: np.float64, ‘b’: np.int32}
+   engine : {‘c’, ‘python’}, optional
+       指定使用的引擎。可以选择C或者是python。C引擎快但是Python引擎功能更加完备
+   converters : dict, default None
+       指定某一列转换函数的字典。key可以是列名或者列的序号。
+   na_values/true_values/false_values 
+       分别指定 NaN, True, False 对应的字符串列表
+   skiprows : list-like or integer, default None
+       需要忽略的行序号（列表,从0开始），或需要跳过的行数（整数,从文件开始处算起）。
+   skipfooter : int, default 0
+       需要跳过的行数, 从文件尾部开始 (c引擎不支持)
+   nrows : int, default None
+       需要读取的行数（从文件头开始算起）。
+   skip_blank_lines : boolean, default True
+       如果为True，则跳过空行；否则记为NaN。
+   iterator : boolean, default False
+       返回TextFileReader迭代对象，可以使用 get_chunk() 来访问每一块(chunks)
+         input = pd.read_csv('input.csv', iterator=True)
+         while loop:
+             try:
+                 chunk = reader.get_chunk(1000000)
+                 dosomething # 进行一些操作
+             except StopIteration:
+                 break
+   chunksize : int, default None
+       指定分次读取时每次读取的文件块的大小(行数), 返回TextFileReader迭代对象
+         input = pd.read_csv('input.csv', chunksize=1000000)
+         for i in input:
+             chunk = dosomethig(input)# 进行一些操作
+   compression : {‘infer’, ‘gzip’, ‘bz2’, ‘zip’, ‘xz’, None}, default ‘infer’
+       直接使用磁盘上的压缩文件。
+       如果使用infer参数，对于文件名(第一个参数)中包含‘.gz’, ‘.bz2’, ‘.zip’, or ‘xz’这些为后缀的文件, 使用 gzip, bz2, zip或者xz来解压。
+       如果使用zip，那么ZIP包中国必须只包含一个文件。设置为None则不解压。
+   thousands : str, default None
+       指定千分位分割符，如“，”或者“."
+   decimal : str, default ‘.’
+       指定字符中的小数点 (例如：欧洲数据使用’，‘).
+   float_precision : string, default None
+       指定 C 引擎使用的浮点数值转换规则
+       None, 默认的, 用于一般的转换
+       high, 高精度的转换
+       round_trip, 用于round trip转换
+   lineterminator : str (length 1), default None
+       指定 C 引擎使用的行分割符
+   quotechar : str (length 1), optional
+       引号，用作标识开始和解释的字符，引号内的分割符将被忽略。
+   comment : str, default None
+       指定注释符, 此注释符以后的部分会被忽略, 直至行尾, 这个参数只能是一个字符
+       注释行会被header忽略但是不会被skiprows忽略。
+       例如如果指定comment='#' 解析‘#empty\na,b,c\n1,2,3’ 以header=0 那么返回结果将是以’a,b,c'作为header。
+   encoding : str, default None
+       指定文件的编码,如"utf-8","gbk"等
+   memory_map : boolean, default False
+       如果使用的文件在内存内，那么直接map文件使用。使用这种方式可以避免文件再次进行IO操作。
+
+分块读取大数据文件:
+import pandas as pd
+reader = pd.read_csv('data/servicelogs', iterator=True)
+loop = True
+chunkSize = 100000
+chunks = []
+while loop:
+    try:
+        chunk = reader.get_chunk(chunkSize)
+        chunks.append(chunk)
+    except StopIteration:
+        loop = False
+        print "Iteration is stopped."
+df = pd.concat(chunks, ignore_index=True)
+
+写文件
+pd.to_csv()
+   filepath_or_buffer : str，default None
+       第一个参数可为文件路径,当为 None 时, 会返回一个字符串
+   sep: character, default ‘,
+       分隔符, 默认为逗号
+   na_rep : string, default ‘’
+       缺失数据替换
+   float_format : string, default None
+       指定浮点数据的格式
+        为numpy支持的数据格式
+              %[标志]宽度[.精度]说明符
+               标志:  -: 左对齐
+                      +: Forces to precede result with + or -  (使用 +/- 号)   ??????
+                      0: 左边补0
+               宽度:   每个数据所占的最小宽度 (如果数据超过了此宽度也不会被截断)
+               精度:   对于e,E,f, 表示小数点后的位数
+                       对于s,     最大字符位数
+               说明符: c     字符
+                       d,i   有符号十进制整数
+                       e,E   浮点数指数输出[e-(E-)记数法]
+                       f     浮点数
+                       g,G   浮点数不显无意义的零"0"
+                       u     无符号十进制整数
+                       o     八进制整数
+                       x,X   十六进制整数
+                       s     字符串
+   columns : sequence, optional
+       指定写入文件的列
+   header : boolean or list of string, default True
+       是否写入列名/指定列名
+   index : boolean, default True
+       是否写入行名
+   index_label : string or sequence, or False, default None
+   mode : str
+       写入文件的模式,如覆盖,追加等    
+            r   以只读方式打开文件。文件的指针将会放在文件的开头。这是默认模式。
+            rb  以二进制格式打开一个文件用于只读。文件指针将会放在文件的开头。这是默认模式。
+            r+  打开一个文件用于读写。文件指针将会放在文件的开头。
+            rb+  以二进制格式打开一个文件用于读写。文件指针将会放在文件的开头。
+            w   打开一个文件只用于写入。如果该文件已存在则将其覆盖。如果该文件不存在，创建新文件。
+            wb  以二进制格式打开一个文件只用于写入。如果该文件已存在则将其覆盖。如果该文件不存在，创建新文件。
+            w+  打开一个文件用于读写。如果该文件已存在则将其覆盖。如果该文件不存在，创建新文件。
+            wb+  以二进制格式打开一个文件用于读写。如果该文件已存在则将其覆盖。如果该文件不存在，创建新文件。
+            a   打开一个文件用于追加。如果该文件已存在，文件指针将会放在文件的结尾。也就是说，新的内容将会被写入到已有内容之后。如果该文件不存在，创建新文件进行写入。
+            ab  以二进制格式打开一个文件用于追加。如果该文件已存在，文件指针将会放在文件的结尾。也就是说，新的内容将会被写入到已有内容之后。如果该文件不存在，创建新文件进行写入。
+            a+  打开一个文件用于读写。如果该文件已存在，文件指针将会放在文件的结尾。文件打开时会是追加模式。如果该文件不存在，创建新文件用于读写。
+            ab+  以二进制格式打开一个文件用于追加。如果该文件已存在，文件指针将会放在文件的结尾。如果该文件不存在，创建新文件用于读写。
+ 
+
+   encoding : string, optional
+       编码
+   line_terminator : string, default '\n'
+       换行符
+   chunksize : int or None
+       一次写入的行数
+
+
+####### 画图
+DataFrame.plot(x=None, y=None, kind=’line’, ax=None, subplots=False, sharex=None,sharey=False, layout=None, figsize=None, use_index=True, title=None,
+      grid=None, legend=True, style=None, logx=False, logy=False, loglog=False,xticks=None, yticks=None, xlim=None, ylim=None, rot=None, fontsize=None,
+      colormap=None, table=False, yerr=None, xerr=None, secondary_y=False,sort_columns=False, **kwds)
+kind : str
+    ‘line’ : 曲线 (default)
+    ‘bar’ : vertical bar plot
+    ‘barh’ : horizontal bar plot
+    ‘hist’ : histogram
+    ‘box’ : boxplot
+    ‘kde’ : Kernel Density Estimation plot
+    ‘density’ : same as ‘kde’
+    ‘area’ : area plot
+    ‘pie’ : pie plot
+    ‘scatter’ : scatter plot
+    ‘hexbin’ : hexbin plot
+sharex : boolean, default True if ax is None else False
+      In case subplots=True, share x axis and set some x axis labels to invisible; defaults
+      to True if ax is None otherwise False if an ax is passed in; Be aware, that passing
+      in both an ax and sharex=True will alter all x axis labels for all axis in a figure!
+sharey : boolean, default False
+      In case subplots=True, share y axis and set some y axis labels to invisible
+use_index : boolean, default True
+      Use index as ticks for x axis
+title : string
+      Title to use for the plot
+grid : boolean, default None (matlab style default)
+      Axis grid lines
+legend : False/True/’reverse’
+      Place legend on axis subplots
+logx : boolean, default False
+      Use log scaling on x axis
+logy : boolean, default False
+       Use log scaling on y axis
+loglog : boolean, default False
+       Use log scaling on both x and y axes
+xticks : sequence
+        Values to use for the xticks
+yticks : sequence
+        Values to use for the yticks
+xlim : 2-tuple/list
+ylim : 2-tuple/list
