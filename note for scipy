@@ -1,0 +1,102 @@
+
+以下子库需要显示的import
+例: import scipy.fftpack 
+
+scipy.cluster       矢量量化 / K-均值  
+scipy.constants     物理和数学常数  
+     import scipy.constants as C
+     C.c # 光速c
+
+scipy.fftpack       傅里叶变换  Numpy也有一个FFT实现(numpy.fft)。然而，通常scipy的应该优先使用，因为它使用了更有效率的底层实现。 
+     scipy.fftpack.fftfreq()函数将生成取样频率
+     scipy.fftpack.fft()将计算快速傅里叶变换
+     scipy.fftpack.ifft
+scipy.integrate     积分程序  
+     scipy.integrate.quad()  最通用的积分程序,用于解析积分
+         from scipy.integrate import quad
+         res, err = quad(np.sin, 0, np.pi/2)  #(用于计算y值的函数,x的积分下限,x的积分上限)
+     scipy.integrate.trapz()  梯形法求积分, 用于数值积分,即可用于序列值的积分 (相邻的两个y和对应的x所围的梯形)
+     scipy.integrate.dblquad() 二重定积分
+     scipy.integrate.tplquad() 三重定积分
+     scipy.integrate.odeint() 可解常微分方程组
+     
+scipy.interpolate   插值
+      from scipy import interpolate   类会构建线性插值函数
+      interpolate.interp1d(x,y,kind="linear") # scipy.interpolate.interp1d 是一个类,相当于对序列在已有范围内重取样
+                           x,y 是已知的数据点,x为递增序列
+                           kind 为插值类型,str/int
+                                  "zero","nearest" 0阶B样条曲线, 即阶梯插值
+                                  "slinear","linear" 1阶B样条曲线, 即线性插值
+                                  "quadratic","cubic" 2阶B样条曲线,3阶B样条曲线; 更高阶的曲线可直接用整数值指定
+                       f = interpolate.interp1d(x_old,y_old,kind="linear")
+                       y_new = f(x_new)
+      interpolate.UnivariateSpline(x,y,w=None,bbox[None,None],k=3,s=None)   #是一个类, 支持插值,外推,拟合
+                           x,y 是已知的数据点,x为递增序列
+                           w 为每个数据点指定的权重值
+                           k 为样条曲线的阶数
+                           s 为平滑参数 s>0时,样条曲线并不一定通过各个数据点; s=0时则会通过, 通过控制s的值可以达到对离散点进行拟合的效果
+                       f = interpolate.UnivariateSpline(x_old,y_old,k=3,s=0)
+                       y_new = f(x_new)
+      interpolate.interp2d(x,y,kind="linear") # 2维插值
+      interpolate.pchip(x,y)                  # 单调三次插值  
+                           可保证插值后的曲线上的所有最值点都出现在数据点上
+                       f = interpolate.pchip(x_old,y_old)
+                       y_new = f(x_new)
+      
+
+scipy.io            数据输入输出  
+    from scipy import io as spio
+    spio.savemat('file.mat', {'a': a})  导入和保存matlab文件
+    spio.loadmat('file.mat', struct_as_record=True)
+    from scipy import misc
+    misc.imread('scikit.png')
+scipy.linalg        线性代数程序  
+    scipy.linalg.det()函数计算方阵的行列式
+    scipy.linalg.inv()`函数计算方阵的逆
+scipy.ndimage       n维图像包 
+    ndimage.shift(lena, (50, 50))
+    ndimage.rotate(lena, 30)
+    ndimage.zoom(lena, 2)
+    scipy.ndimage.filters
+
+scipy.odr           正交距离回归  
+scipy.optimize      优化  提供了函数最小值(标量或多维)、曲线拟合和寻找等式的根的有用算法。
+    
+    scipy.optimize.fmin() 函数最小值 另外还有其它算法: fmin_powell,fmin_cg,fmin_bfgs
+    optimize.fmin_bfgs(f, 0)  BFGS算法,找到这个函数局部最小值
+    grid = (-10, 10, 0.1)
+    optimize.brute(f, (grid,))  找到全局最小点,但是会耗费资源
+    optimize.fminbound(f, 0, 10) 范围内的最小值
+    from scipy.optimize import leastsq                                             最小二乘法拟合
+    scipy.optimize.leastsq(func, x0, args=())  最小二乘法拟合   注:如果初值x0和真实值差别很大则最终结果可能不能收敛,即会得到错误的结果
+                                              func 是我们自己定义的一个计算误差的函数,此函数返回值为数组  
+                                              x0  是计算的初始参数值,list 
+                                              args 为func的其他参数
+    scipy.optimize.curve_fit(func, x数据,y数据,初始参数值)                            曲线拟合
+    scipy.optimize.fsolve(func,x0)     对非线性方程组求解                             方程组求解
+    
+scipy.signal        信号处理  
+    scipy.signal.detrend()   移除信号的线性趋势
+    scipy.signal.resample()  使用FFT重采样n个点
+    scipy.signal.hamming(), scipy.signal.bartlett(), scipy.signal.blackman()…  窗函数
+    scipy.signal.medfilt()   中值滤波
+    scipy.signal.wiener()    维纳滤波
+scipy.sparse        稀疏矩阵 (很多元素都为0的大型矩阵)
+scipy.spatial       空间数据结构和算法  
+scipy.special       任何特殊数学函数(包含基本的数学函数,特殊数学函数和numpy中出现的所有函数)
+    scipy.special.jn() 整数n阶贝塞尔函数
+    scipy.special.ellipj() 雅可比椭圆函数
+    scipy.special.gamma() 伽马函数
+    scipy.special.gammaln 这个函数给出对数坐标的伽马函数，因此有更高的数值精度。
+    scipy.special.log1p() 即计算log(1+x) 由于浮点数的精度原因,直接计算如log(1+1e-20)这样的值时会出现问题
+
+scipy.stats         统计 
+    loc, std = stats.norm.fit(a)  拟合正态过程过程数据
+    stats.scoreatpercentile(a, 50)  50百分位点,即找到一个数据,有50%的数据小于此数据
+    stats.scoreatpercentile(a, 90)  90%的数据小于此数据
+    stats.ttest_ind(a, b)   a,b为两个数组, 输出结果由以下部分组成： 
+                              T统计量：它是这么一种标志，与不同两个随机过程之间成比例并且幅度和差异的显著程度有关3。 
+                              p值：两个过程相同的概率。如果接近1,这两个过程是几乎完全相同的。越靠近零，两个过程越可能有不同的均值。 
+
+    
+    
