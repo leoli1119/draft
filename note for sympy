@@ -1,0 +1,116 @@
+
+import sympy as sy
+# 默认用更漂亮的显示方式
+# from sympy import init_printing
+sy.init_printing()
+
+################## sympy #########################
+
+x, y, z = symbols('x y z')     # 符号对象, 可限定 real = True , positive = True, complex = True , integer = True ...
+f = symbols("f",cls = Function) # 定义f为数字函数
+
+f = sy.Function()   # 定义f为数字函数
+
+######### 表达式变换
+
+sy.exp(sy.I*x).expand(complex=True) # 展开为复数, 可理解为将x当作复数处理     表达式展开 
+sy.cos(x).series(x, 0, 10) #  .series(var, point, order)                 泰勒级数展开   
+sy.simplify(expr)          # 对数学表达式进行化简                           化简
+sy.radsimp(expr)           # 对表达式的分母进行有理化                       分母进行有理化
+           它所得到的表达式的分母部分将不含无理数。即将表达式转换为分子除分母的形式。
+sy.ratsimp(expr)           # 对表达式的分母进行通分运算                      通分运算 
+sy.cancel(expr)           # 对表达式的分子分母进行约分运算                    约分运算
+           只能对纯符号的分式表达式进行约分
+           不能对函数内部的表达式进行约分，不能对带函数的表达式进行约分
+sy.trim(expr)             # 对表达式的分子分母进行约分运算                   约分运算         
+           可以对表达式中的任意部分进行约分，并且支持函数表达式的约分运算。
+sy.apart(expr)            # 对表达式进行部分分式分解                        部分分式分解
+sy.factor(expr)            # 对表达式进行因式分解                           因式分解
+sy.together(1/x+1/y)       # 代数式的合并                                 代数式的合并
+sy.trigsimp(expr)         # 对表达式中的三角函数进行化简                     三角函数化简 
+           有两个可选参数——deep和recursive，默认值都为False。
+              当deep参数为True时，将对表达式中所有子表达式进行化简运算
+              当recursive参数为True时，将递归使用trigsimp()进行最大限度的化简
+sy.expand_trig(expr)      # 展开三角函数                                   三角函数展开 
+
+
+######### 表达式计算
+
+sy.re() 计算其实部
+sy.im() 计算其虚部
+
+sy.integrate(6*x**5, x)                 #不定积分                         解析积分
+sy.integrate(x**3, (x, -1, 1))          #定积分
+sy.integrate(6*x**5+y, x,y)             #双重不定积分
+sy.integrate(x**3+y, (x, -1, 1),(y,1,3) #双重定积分
+
+sy.diff(sy.sin(x), x)                                                    解析微分
+sy.diff(sy.sin(2*x), x, 2) # 高阶微分 diff(func, var, n)
+diff(sin(x*y),x,2,y,3) # 对表达式进行x的2阶求导,对y进行3阶求导
+diff(sin(2*x),x)
+sin(2*x).diff(x,1)
+t=Derivative(sin(x),x)   Derivative是表示导函数的类，它的第一个参数是需要进行求导的数学函数，第二个参数是求导的自变量，
+                         注意：Derivative所得到的是一个导函数，它不会进行求导运算。
+
+sy.limit(sy.sin(x)/x, x, 0)                                              极限
+
+sy.summation(2*i - 1, (i, 1, n))                                        连加求和
+
+expression.subs(x, y)             将算式中的x替换成y                       替换
+      (1 + x*y).subs(x, pi)  
+expression.subs({x:y,u:v})        使用字典进行多次替换  
+expression.subs([(x,y),(u,v)])    使用列表进行多次替换   
+      (1 + x*y).subs([(x, pi), (y, 2)])
+
+expr.doit()          执行/计算expr ,如对于微分表达式则直接计算其符号结果    计算表达式符号结果
+
+##########  方程
+方程构建:
+   任何表达式都可以直接表示值为0的方程,即表达式 expr 也是方程 expr=0
+   用sy.Eq构建方程
+      eq1 = sy.Eq( 0, u_max*rho_max*(1 - A*rho_max-B*rho_max**2) )  # 一般方程
+      
+      f = sy.Function("f")
+      eq1 = sy.Eq(f(x).diff(x)+f(x)+f(x)**2,0)                      # 微分方程
+
+
+
+sy.solve(方程,未知数)   # 方程求解 ,返回值为list                                 方程求解
+                    它的第一个参数是表示方程的表达式，其后的参数是表示方程中未知量的符号。
+                      sy.solve(eq1,x)
+                      sy.solve(sy.sin(x)+x,x) # 即对 sy.sin(x)+x=0 求解
+
+sy.roots(expr)     # 计算单变量方程expr=0的根                                   方程求解
+ 
+sy.dsolve(eq1,f(x))  # 微分方程求解                                            微分方程求解
+                      可以对微分方程进行符号求解，它的第一个参数是一个带未知函数的表达式，第二个参数是需要进行求解的未知函数。
+                      它在解微分方程中可以传递hint参数，指定微分方程的解法，若设置为“best”则放dsolve()尝试所有的方法并返回最简单的解。
+
+
+########### 表达式数值计算   
+lambdify()                                              将表达式转换为数值运算的函数
+       from sympy.utilities.lambdify import lambdify
+       func = lambdify(x, big_expression_containing_x,modules = 'numpy') # returns a numpy-ready function
+                  lambdify([x],f(x),modules="numpy") 第一个参数为自变量列表
+                                                     第二个参数为由自变量组成的表达式
+                                                     第三个参数 modules="numpy" 可理解为自变量接受的数据类型
+       numpy_array_of_results = func(numpy_arr) 
+
+sy.N()                                                  求值函数
+        sy.N(数值版式,精度)  如 sy.N(sy.pi,20)
+        
+expr.evalf(精度)                                         求值方法
+        sy.pi.evalf(n=50)
+
+
+##################
+
+x = sy.symbols("x")
+f = sy.Sum(sy.Indexed('x',i)*sy.cos(i*sy.pi),(i,1,10))                   # 离散量
+f
+
+y = np.array([0,0,0,50,-15,-10,-5,-2,-1,0,0,0,0,0,0,0])
+
+from sympy.utilities.lambdify import lambdify
+func = lambdify(x, f, 'numpy') # returns a numpy-ready function
+numpy_array_of_results = func(y)
