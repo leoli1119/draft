@@ -1,0 +1,825 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Apr 24 15:47:27 2017
+
+"""
+
+import numpy as np
+import pandas as pd
+
+class sNp_Touchstone():
+    """
+    解析散射参数文件 xxx.sNp 
+    """
+    
+    def __init__(self, path_sparam):
+        """
+          得到散射参数文件 xxx.sNp 的信息
+          
+            a = sNp_Touchstone(Sparam_file)
+          
+           属性:
+            a.file         # 文件路径
+            a.n            # 端口数
+            a.version      # 散射参数文件版本, 为 1.x
+            a.freq_unit    # "hz"
+            a.parameter    # 'S'
+            a.format       # "MA", "DB", "RI"
+            a.Zref         # 50.00
+            a.freq_rank    # snp文件的频率范围  如: ['0.00e+00', '1.00e+10', 'hz']
+            a.comment      # 注释
+            a.portinfo     # 注释中的port信息
+            a.data         # 散射数据 为 pandas 数据表格式, 行标签为频率,列标签为 Sxxx ...
+        
+           方法:
+            a.sNp_toMA()
+            a.sNp_toDB()
+            a.sNp_toRI()
+            a.sNp_getLine(self,param = "S", OUTport = 1, INport = 1, Format_col = "mag")
+            a.sNp_unwrapAng(OUTport = 1, INport = 1)
+            a.sNp_PhaseDelay(OUTport = 1, INport = 1)
+            a.sNp_changeUnit(t_unit = "hz")
+            a.sNp_Savetofile(save_path, selfprecision = 0)
+            a.sNp_toZparam()     转好为Z参数
+            a.sNp_toSparam()     转好为S参数
+            
+          私有方法:
+            __loadfile(self,path_sparam)  读取sNp文件
+            __GetColsName(self, t_param, t_format, n_port, n_ele)  生成列标签组成的list
+            __GetInfoInSfile(self, path, Lnum=200)   获得S参数文件的注释信息
+           
+        """
+        self.file = path_sparam
+        self.n = None
+        self.version = None
+        self.freq_unit = None  # "hz"
+        self.parameter = None  # 'S'
+        self.format = None  # "MA", "DB", "RI"
+        self.Zref = None   # 50.00
+        self.freq_rank = None  # snp文件的频率范围 ['0.00e+00', '1.00e+10', 'hz']
+        self.comment = None  # 注释
+        self.portinfo = None  # 注释中的port信息 str in list
+        self.data = None      # 散射数据 为 pandas 数据表格式, 行标签为频率,列标签为 Sxxx ...
+        
+        self.__InitialFormat = None  #  原始 S 参数文件的 format  "MA", "DB", "RI"
+        self.__InitialParameter = None #  原始 S 参数文件的 Parameter   'S'
+        self.__InitialFile = None  # 原始 S 参数文件的路径
+        self.__InitialZref = None  # 原始 S 参数文件的端口阻抗  50.00
+        self.__InitialFreq_unit = None  # 原始 S 参数文件的频率单位  "hz"
+        self.__d_unit = {"ghz":1.0*1e9, "mhz":1.0*1e6, "khz":1.0*1e3, "hz":1.0}  # 单位代表的扩大倍数
+        self.__d_col_text = {"ma":["mag","ang"],"db":["dB","ang"],"ri":["real","imag"]}  # 生成列标签时的组成部分
+        self.__AllowLoadfile = True  # 控制涉及格式转换的函数时, 允不允许读取原文件
+        #
+        #
+        # 需要确认S参数文件存在
+        #
+        #
+        
+        if path_sparam.split(".")[-1][0].lower() == "s" and  path_sparam.split(".")[-1][-1].lower() == "p" :
+            try:
+                self.n = int(path_sparam.split(".")[-1][1:-1])
+            except:
+                print("This is NOT a .sNp file!")
+            else:
+                self.__loadfile(path_sparam)
+                self.__InitialFormat = self.format
+                self.__InitialParameter = self.parameter  # 'S'/"Z"
+                self.__InitialFile = path_sparam
+                self.__InitialZref = self.Zref
+                self.__InitialFreq_unit = self.freq_unit
+        else:
+            print("other ... ")
+
+    def __loadfile(self,path_sparam):
+        
+        s_comment = ""  # s参数文件中的注释信息
+        l_portInfo = list()  # port名信息, str in list
+        l_unit = list()  # s参数文件中的单位和端口阻抗
+        i_LineNumOfunit = None # 文件中 # 开头的行好
+        
+        # 搜索S参数文件的前Nline行的注释信息
+        if self.n <= 50:
+            Nline = 100
+        elif self.n <=100:
+            Nline = 200
+        else:
+            Nline = self.n * 2
+        
+        s_comment,l_portInfo,xxx,l_unit,i_LineNumOfunit = self.__GetInfoInSfile(path_sparam, Nline)
+        
+        # 判断是否为散射矩阵文件
+        if l_unit[1].lower() not in [ "s", "z" ]:
+            print("S-parameters data error! (not scattering or impedance matrix)")
+            return None
+        
+        #### 赋值
+        self.comment = s_comment  # 注释
+        self.portinfo = l_portInfo  # port名信息, str in list
+        self.parameter = l_unit[1].upper()  # 'S'/"Z"
+        self.format = l_unit[2].upper() # "MA", "DB", "RI"
+        self.Zref = float(l_unit[4])   # 50.00
+        
+        
+        # 读取S参数文件的数据部分
+        try:
+            pd_data = pd.read_csv(path_sparam, delim_whitespace=True, comment="!", header=None, names=[1,2,3,4,5,6,7,8,9],skiprows=[i_LineNumOfunit])
+        except:
+            print("S-parameters file error! (pd_data is error)")
+            return None     
+        
+        # # 一个频点对应的数据所占的行数
+        #Ncol_inCell = int(self.n*self.n/4) + (0 if self.n*self.n%4==0 else 1)
+        # # 频点数
+        #N_freq = pd_data.shape[0]/Ncol_inCell
+        #
+        #if N_freq % 1 != 0 :
+        #   print("S-parameters file error! (N_freq is error)")
+        #    return None    
+        #   
+        # # 得到每块数据中相同位置的列号dict
+        #l_cols_inCell = dict()
+        #for j in range(Ncol_inCell):
+        #   l_cols_inCell[j] = []
+        #   for i in range(N_freq):
+        #       l_cols_inCell[j].append(Ncol_inCell * i + j)
+                
+        data_arr_tmp = pd_data.values
+        arr_data = data_arr_tmp[np.isfinite(data_arr_tmp)] # 剔除np.nan后的一维数组
+        # 重新更改数组形状
+        try:
+            arr_data = arr_data.reshape((-1,self.n * self.n * 2 + 1))
+        except:
+            print("S-parameters data error! (lack of some data)")
+            return None
+        
+        # 为数据增加标签
+        
+        # 列标签 S1_1_mag S1_1_ang S1_2_mag S1_2_ang S1_3_mag S1_3_ang ...
+        l_cols = self.__GetColsName(self.parameter, self.format, self.n, 2)
+                
+        try:
+            # 频率单位代表的倍数 将单位直接转为 hz
+            n_unit = self.__d_unit[ l_unit[0].lower() ]
+            if n_unit == 1:
+                df_data = pd.DataFrame(arr_data[:,1:], index = arr_data[:,0], columns = l_cols)
+            else:
+                df_data = pd.DataFrame(arr_data[:,1:], index = arr_data[:,0]*n_unit, columns = l_cols)
+        except:
+            print("S-parameters data error! (arr_data to df_data)")
+            return None
+        
+        # 判断取点频率的单调性
+        if not( df_data.index.is_unique and df_data.index.is_monotonic_increasing ):
+            print("S-parameters data error! (freq error)")
+            return None
+        
+        # 赋值
+        self.version = '1.x'
+        self.freq_unit = "hz"  # "hz" 在将array转为df格式时, 直接将单位转成了 hz
+        self.freq_rank = ["%.2e" % df_data.index.min(), "%.2e" % df_data.index.max(), self.freq_unit]  # snp文件的频率范围
+        self.data = df_data      # 散射数据 为 pandas 数据表格式, 行标签为频率,列标签为 Sxxx ...
+    
+    def __GetColsName(self, t_param, t_format, n_port, n_ele):
+        """
+           生成列标签组成的list
+        """
+        
+        t_param = t_param.upper()
+        l_cols = []
+        
+        if type(n_port) == type( [] ):
+            list_n = n_port
+        else:
+            list_n = [k+1 for k in range(n_port)]
+        
+        if n_ele == 2:
+            l_col_text = self.__d_col_text[t_format.lower()]
+
+            for i in list_n:
+                for j in list_n:
+                    l_cols.append(t_param+str(i)+"_"+str(j)+"_"+l_col_text[0])
+                    l_cols.append(t_param+str(i)+"_"+str(j)+"_"+l_col_text[1])
+                    #l_cols.extend( ["S"+str(i)+"_"+str(j)+"_"+l_col_text[0], "S"+str(i)+"_"+str(j)+"_"+l_col_text[1]] )
+        # 复数形式的列名
+        elif n_ele == 1:
+            t_format = t_format.upper()
+            
+            for i in list_n:
+                for j in list_n:
+                    l_cols.append(t_param+str(i)+"_"+str(j)+"_"+t_format)   
+        else:
+            print("n_ele parameter error")
+            return None
+            
+        return l_cols
+        
+        
+    def __GetInfoInSfile(self, path, Lnum=200):
+        """
+           获得S参数文件的注释信息
+        """
+        s_comment_in200lines = "" # 前200行中的注释信息
+        l_portInfo_in200lines = [] # 前200行中的port名信息, str in list
+        l_LineNumOfComment_in200lines = [] # 前200行中的注释行的行号, int in list
+        l_unit_in200lines = [] # 前200行中 # 开头的行内的信息
+        i_LineNumOfunit_in200lines = [] # 前200行中 # 开头的行内的信息
+    
+        with open(path,"r") as file_sparam:
+                    
+            # 处理整个文件,找到注释信息和以#开头的信息
+            for num,s_line in enumerate(file_sparam):
+                if s_line.startswith("!"):
+                    s_comment_in200lines += s_line
+                    l_LineNumOfComment_in200lines.append(num)
+                    
+                    if "port" in s_line.lower():
+                        l_portInfo_in200lines += s_line
+                        
+                elif s_line.startswith("#"):
+                    l_unit_in200lines += s_line.split()[1:]
+                    i_LineNumOfunit_in200lines = num
+                    
+                if num >= Lnum: break
+        
+        return s_comment_in200lines,l_portInfo_in200lines,l_LineNumOfComment_in200lines,   \
+               l_unit_in200lines,i_LineNumOfunit_in200lines
+
+    def sNp_toMA(self):
+        """
+          将S参数的数据转换为 MA
+        """
+        
+        if self.__AllowLoadfile and self.__InitialFormat == "MA" and self.parameter == self.__InitialParameter \
+                   and self.Zref == self.__InitialZref and self.__InitialFreq_unit == self.freq_unit:
+            
+            # 如果是原始文件的格式, 则直接读取原始文件
+            self.__loadfile(self.__InitialFile)
+            
+        elif self.format == "MA":
+            pass
+        
+        elif self.format == "DB":
+            # db 2 ma
+#            for i,j in self.data.columns.values.reshape(-1,2):
+#                # i -> db   j -> ang  mag = 10 ** (db/20)
+#                self.data[i[0:-2]+self.__d_col_text["ma"][0]] = np.power( 10, self.data[i]/20 )
+#                # 移动 j 列到最后
+#                temp = self.data.pop(j)
+#                self.data.insert(self.data.shape[1],j,temp)
+#                # 删除 MA 数据
+#                self.data = self.data.drop([i],axis=1) 
+            int_shape = self.data.shape
+            arr_data_tmp = self.data.values.reshape(-1,2)
+             ### db -> ma
+            arr_data_tmp[:,0] = np.power( 10, arr_data_tmp[:,0]/20 )  
+            arr_data_tmp = arr_data_tmp.reshape(int_shape)
+            
+            l_cols = self.__GetColsName(self.parameter, "MA", self.n, 2)
+            self.data = pd.DataFrame(arr_data_tmp, index = self.data.index, columns = l_cols)
+
+            self.format = "MA"
+            
+        elif self.format == "RI":
+            # ri 2 ma
+#            for i,j in self.data.columns.values.reshape(-1,2):
+#                # [i]->real  [j]->imag
+#                self.data[i[0:-4]+self.__d_col_text["ma"][0]] = np.sqrt(self.data[i]**2+self.data[j]**2)
+#                # imag/real
+#                self.data[i[0:-4]+self.__d_col_text["ma"][1]] = np.rad2deg( np.arctan2(self.data[j], self.data[i]) )
+#                # 删除 MA 数据
+#                self.data = self.data.drop([i,j],axis=1)  
+            int_shape = self.data.shape
+            arr_data_tmp = self.data.values.reshape(-1,2)
+             ### ri -> ma
+            arr_data_tmp[:,0],arr_data_tmp[:,1] = np.sqrt(arr_data_tmp[:,0]**2+arr_data_tmp[:,1]**2) ,  \
+                                           np.rad2deg( np.arctan2(arr_data_tmp[:,1], arr_data_tmp[:,0]) ) 
+            arr_data_tmp = arr_data_tmp.reshape(int_shape)
+            
+            l_cols = self.__GetColsName(self.parameter, "MA", self.n, 2)
+            self.data = pd.DataFrame(arr_data_tmp, index = self.data.index, columns = l_cols)
+            
+            self.format = "MA"
+            
+        else:
+            print("data error! (snp format)")
+            
+    
+    def sNp_toRI(self):
+        """
+          将S参数的数据转换为 RI
+        """
+        
+        if self.__AllowLoadfile and self.__InitialFormat == "RI" and self.parameter == self.__InitialParameter \
+                 and self.Zref == self.__InitialZref and self.__InitialFreq_unit == self.freq_unit:
+            
+            # 如果是原始文件的格式, 则直接读取原始文件
+            self.__loadfile(self.__InitialFile)
+        
+        elif self.format == "RI":
+            pass
+            
+        else:
+            # 先转为 ma
+            self.sNp_toMA() 
+            
+#            # ma 2 ri
+#            for i,j in self.data.columns.values.reshape(-1,2):
+#                # real = mag * cos(ang)
+#                self.data[i[0:-3]+self.__d_col_text["ri"][0]] = self.data[i] * np.cos(np.deg2rad(self.data[j]))
+#                # imag = mag * sin(ang)
+#                self.data[i[0:-3]+self.__d_col_text["ri"][1]] = self.data[i] * np.sin(np.deg2rad(self.data[j]))
+#                # 删除 MA 数据
+#                self.data = self.data.drop([i,j],axis=1)  
+
+            int_shape = self.data.shape
+            arr_data_tmp = self.data.values.reshape(-1,2)
+             ### ma -> ri
+            arr_data_tmp[:,0],arr_data_tmp[:,1] = arr_data_tmp[:,0] * np.cos(np.deg2rad(arr_data_tmp[:,1])) ,  \
+                         arr_data_tmp[:,0] * np.sin(np.deg2rad(arr_data_tmp[:,1]))
+            arr_data_tmp = arr_data_tmp.reshape(int_shape)
+            
+            l_cols = self.__GetColsName(self.parameter, "RI", self.n, 2)
+            self.data = pd.DataFrame(arr_data_tmp, index = self.data.index, columns = l_cols)
+
+            self.format = "RI"            
+        
+    def sNp_toDB(self):
+        """
+          将S参数的数据转换为 DB
+        """    
+        
+        if self.__AllowLoadfile and self.__InitialFormat == "DB" and self.parameter == self.__InitialParameter \
+                   and self.Zref == self.__InitialZref and self.__InitialFreq_unit == self.freq_unit:
+            
+            # 如果是原始文件的格式, 则直接读取原始文件
+            self.__loadfile(self.__InitialFile)
+            
+        elif self.format == "DB":
+            pass
+                    
+        else:
+            # 先转为 ma
+            self.sNp_toMA()         
+        
+#            # ma 2 db
+#            for i,j in self.data.columns.values.reshape(-1,2):
+#                # i -> mag   j -> ang
+#                self.data[i[0:-3]+self.__d_col_text["db"][0]] = 20 * np.log10( self.data[i] )
+#                # 移动 j 列到最后
+#                temp = self.data.pop(j)
+#                self.data.insert(self.data.shape[1],j,temp)
+#                # 删除 MA 数据
+#                self.data = self.data.drop([i],axis=1) 
+
+            int_shape = self.data.shape
+            arr_data_tmp = self.data.values.reshape(-1,2)
+             ### ma -> db
+            arr_data_tmp[:,0] = 20 * np.log10( arr_data_tmp[:,0].clip(1e-30,1e30) )
+            arr_data_tmp = arr_data_tmp.reshape(int_shape)
+            
+            l_cols = self.__GetColsName(self.parameter, "DB", self.n, 2)
+            self.data = pd.DataFrame(arr_data_tmp, index = self.data.index, columns = l_cols)       
+            
+            self.format = "DB"
+    
+    def sNp_getLine(self,param = "S", OUTport = 1, INport = 1, Format_col = "mag"):
+        """
+          获得指定形式的Sxx曲线, 返回值为DataFrame格式
+        """
+        # 判断输入参数
+        if param.upper() not in ["S","Z"]:
+            print('The param must be in ["S","Z"] !')
+            return None            
+        
+        if str(Format_col).lower() not in  ["mag","ang","db","real","imag"]:
+            print('The format must be in ["mag","ang","dB","real","imag"] !')
+            return None
+        
+        try:
+            OUTport = int(OUTport)
+            INport = int(INport)
+        except:
+            print("port number is wrong!")
+            return None
+        
+        if not ( 1 <= OUTport <= self.n and 1 <= INport <= self.n ):
+            print("port number is wrong! (max port number)")
+            return None
+        
+        # 得到指定曲线,为DataFrame格式
+        if param.upper() == "Z":
+            self.sNp_toZparam()
+            
+        if str(Format_col).lower() in ["mag","ang"]:
+            self.sNp_toMA()
+            t_col = param.upper()+str(OUTport)+"_"+str(INport)+"_"+str(Format_col).lower()
+        elif str(Format_col).lower() in ["db"]:
+            self.sNp_toDB()
+            t_col = param.upper()+str(OUTport)+"_"+str(INport)+"_dB"
+        else:
+            self.sNp_toRI()
+            t_col = param.upper()+str(OUTport)+"_"+str(INport)+"_"+str(Format_col).lower()
+        
+        self.__AllowLoadfile = True
+        
+        Xxx = pd.DataFrame(self.data[t_col], index = self.data.index, columns = [t_col])
+        
+        return Xxx
+    
+    def sNp_unwrapAng(self, OUTport = 1, INport = 1 ):
+        """
+          将相位展开, 返回值为DataFrame格式
+        """
+        
+        try:
+            OUTport = int(OUTport)
+            INport = int(INport)
+        except:
+            print("port number is wrong!")
+            return None
+        
+        if not ( 1 <= OUTport <= self.n and 1 <= INport <= self.n ):
+            return None
+        
+        temp = self.sNp_getLine("S", OUTport, INport, "ang" )
+        t_col = "S"+str(OUTport)+"_"+str(INport)+"_ang"
+        t_col2 = "S"+str(OUTport)+"_"+str(INport)+"_unwrapAng"
+        
+        try:
+            temp[t_col] = np.rad2deg(np.unwrap(np.deg2rad(temp[t_col])))
+            temp.rename(columns={t_col:t_col2}, inplace = True)  #替换列名
+        except:
+            print("Phase unwrap error!")
+            return None   
+        
+        return temp
+    
+    def sNp_PhaseDelay(self, OUTport = 1, INport = 1):
+        """
+          相位延迟, 返回值为DataFrame格式
+        """
+    
+        try:
+            OUTport = int(OUTport)
+            INport = int(INport)
+        except:
+            print("port number is wrong!")
+            return None
+        
+        if not ( 1 <= OUTport <= self.n and 1 <= INport <= self.n ):
+            return None
+        
+        temp = self.sNp_unwrapAng(OUTport, INport )
+        t_col2 = "S"+str(OUTport)+"_"+str(INport)+"_unwrapAng"    
+        t_col3 = "S"+str(OUTport)+"_"+str(INport)+"_phasedelay"  
+        
+        # 频率单位代表的倍数
+        n_unit = self.__d_unit[self.freq_unit]
+        
+        try:
+            # 求微分, 第一个点的微分值没有, 为 NaN
+            temp[t_col2] = temp[t_col2].diff() / temp.index.to_series().diff() * (-1) / 360 / n_unit
+            temp.rename(columns={t_col2:t_col3}, inplace = True)  #替换列名
+
+#            temp.iat[0,0] = temp.iat[1,0] # 第一个频率处的值 设为与 第二个频率处的值相同
+        except:
+            print("Get phasedelay error!")
+            return None   
+        
+        return temp
+    
+    def sNp_changeUnit(self, t_unit = "hz"):
+        """
+          改变频率单位
+        """
+        
+        if str(t_unit).lower() not in  ["ghz", "mhz", "khz", "hz"]:
+            print('The unit must be in ["ghz", "mhz", "khz", "hz"] !')
+            return None  
+        
+        if self.freq_unit == str(t_unit).lower():
+            return None
+        
+        # 频率单位代表的倍数
+        n_unit1 = self.__d_unit[self.freq_unit]
+        n_unit2 = self.__d_unit[str(t_unit).lower()]
+        
+        self.data.index = self.data.index.values * n_unit1 / n_unit2
+        self.freq_unit = str(t_unit).lower()
+		
+    def sNp_Savetofile(self,save_path, selfprecision = 0):
+        """
+          输出到文件, 返回 True (保存成功) / False (出现了错误)
+        """
+        # 判断指定路径
+        if not "s"+str(self.n)+"p" == save_path.split(".")[-1]:
+            return None
+            print("save file path error")
+        
+        # 注释文字
+          # 添加的信息说明
+        commentbyself = "save sNp file by self"
+          # #号开头的行
+        commentsharpline = "# " + self.freq_unit +" "+ self.parameter +" "+ \
+                            self.format + " R " + str(self.Zref)
+          # port信息
+        commentportinfo = "! port info added by self (include word \"port\") \n" +  \
+                           "".join(i for i in self.portinfo)
+          # 总的
+        filecomment = "!"+ commentbyself + " \n\n"  \
+                      + "! old comments: \n"      \
+                      +  self.comment + "\n"      \
+                      + commentportinfo + "\n"    \
+                      + commentsharpline + "\n"
+        
+        # 注释文字 写入文件
+        with open(save_path, 'w', encoding='utf-8') as f:
+            f.write(filecomment)
+        
+#        # 频率列 变为字符串数组
+#        freq = self.data.index.values.astype(np.array([""]).dtype)
+#        
+#        # 数据 变为字符串数组
+#        data_int = self.data.values.astype(np.array([""]).dtype)
+#        
+#        #插入频率数据
+#        data_int =  np.insert(data_int, 0, freq, axis=1)
+        
+        # 需要插入 \n 人列号
+          # 一个频点对应的数据所占的行数
+        Ncol_inCell = int(self.n*self.n/4) + (0 if self.n*self.n%4==0 else 1)
+        
+        if not self.n*self.n%4==0 :
+            line_nums = [8*(i+1) for i in range(Ncol_inCell)][0:-1] + [self.n*self.n*2+1]
+        else:
+            line_nums = [8*(i+1) for i in range(Ncol_inCell)]
+        
+        #插入"\n", 得到最终数据
+        data_int = self.data.copy()
+
+        j = -1
+        for i in line_nums:
+            j += 1
+            i += j
+            data_int.insert(i, "\n!\t", "\n\t", allow_duplicates=True)
+        
+        # 指定精度
+        if not selfprecision == 0:
+            selfprecision = str(int(selfprecision))
+            b_header = True
+        elif self.n <= 25 :
+            selfprecision = "9"
+            b_header = True
+        else: 
+            selfprecision = "6"
+            b_header = False
+            
+        fmt = "%." + selfprecision + "e"
+        
+        # 写入数据
+        try:
+            data_int.to_csv(save_path, sep=" ", header = b_header, index_label="!freq", float_format=fmt,       \
+                            encoding = "utf-8", mode = "a", quoting  = 3, escapechar = " " )
+            return True
+        except:
+            print("savetxt error")
+            return False
+    
+    def sNp_toZparam(self):
+        """
+          换为 Z 参数形式
+        """
+        
+        if self.parameter == "Z":
+            return None
+        else:
+            self.parameter = "Z"
+        
+        # 换为RI形式
+        self.sNp_toRI()
+        
+        data_int = self.data
+        
+        # 列名
+        Sri_1 = self.__GetColsName("S", "RI", self.n, 1)
+        Sri_2 = data_int.columns.values.reshape(-1,2)
+        
+        # 变为复数形式
+        for i in range(len(Sri_1)):
+            data_int[Sri_1[i]] = data_int[Sri_2[i][0]]+data_int[Sri_2[i][1]]*1j 
+
+        # 计算得到 Z 矩阵, 复数形式
+        data_S_ = data_int[Sri_1]
+        data_U_ = np.identity(self.n)
+        
+#        f = lambda data_S_p : ( self.Zref * np.dot((data_U_ + data_S_p.values.reshape(self.n,self.n)), \
+#                                          np.linalg.inv(data_U_ - data_S_p.values.reshape(self.n,self.n)))).ravel()
+        
+        def f(data_S_p):
+            S_perline_sq = data_S_p.values.reshape(self.n,self.n)
+            Result_ = self.Zref * np.dot( data_U_ + S_perline_sq , np.linalg.inv(data_U_ - S_perline_sq))
+            return Result_.ravel()
+        
+        data_Z_ = data_S_.apply(f,axis = 1)
+        
+        # 变为实部虚部分开的形式
+          # 列名
+        Zri = self.__GetColsName("Z", "RI", self.n, 2)
+        
+        for i in range(len(Sri_1)):
+            data_Z_[Zri[i*2]] = np.real( data_Z_[Sri_1[i]] )
+            data_Z_[Zri[i*2+1]] = np.imag( data_Z_[Sri_1[i]] )
+        
+        # 赋值
+        self.data = pd.DataFrame(data_Z_[Zri], index = self.data.index, columns = Zri)
+        self.format = "RI"
+
+    def sNp_toSparam(self):
+        """
+          换为 S 参数形式
+        """
+        
+        if self.parameter == "S":
+            return None
+        else: 
+            self.parameter = "S"
+        
+        # 换为RI形式
+        self.sNp_toRI()
+        
+        data_int = self.data
+        
+        # 列名
+        Zri_1 = self.__GetColsName("Z", "RI", self.n, 1)
+        Zri_2 = data_int.columns.values.reshape(-1,2)
+        
+        # 变为复数形式
+        for i in range(len(Zri_1)):
+            data_int[Zri_1[i]] = data_int[Zri_2[i][0]]+data_int[Zri_2[i][1]]*1j 
+
+        # 计算得到 S 矩阵, 复数形式
+        data_Z_ = data_int[Zri_1]
+        data_U_ = np.identity(self.n)
+        
+#        f = lambda data_Z_p : np.dot( np.linalg.inv( data_Z_p.values.reshape(self.n,self.n) + self.Zref*data_U_ ) , \
+#                                     (data_Z_p.values.reshape(self.n,self.n) - self.Zref*data_U_ )).ravel()
+        
+        def f(data_Z_p):
+            Z_perline_sq = data_Z_p.values.reshape(self.n,self.n)
+            Result_ = np.dot( np.linalg.inv( Z_perline_sq + self.Zref*data_U_ ) ,  Z_perline_sq - self.Zref*data_U_ )
+            return Result_.ravel()
+        
+        data_S_ = data_Z_.apply(f,axis = 1)
+        
+        # 变为实部虚部分开的形式
+          # 列名
+        Sri = self.__GetColsName("S", "RI", self.n, 2)
+        
+        for i in range(len(Zri_1)):
+            data_S_[Sri[i*2]] = np.real( data_S_[Zri_1[i]] )
+            data_S_[Sri[i*2+1]] = np.imag( data_S_[Zri_1[i]] )
+        
+        # 赋值
+        self.data = pd.DataFrame(data_S_[Sri], index = self.data.index, columns = Sri)
+        self.format = "RI"
+        
+    def sNp_changeZref(self, Zother = 50):
+        """
+         改变S参数的端口阻抗
+        """
+        
+        if Zother <= 0:
+            print("Zport should be greater than 0")
+            return None
+
+        self.Zref = Zother
+        
+        # 转为 S 参数文件
+        if self.parameter == "Z":
+            self.sNp_toSparam()
+            
+        self.sNp_toRI()
+        
+#        # 控制后面的函数是否允许读取原 sNp 文件中的数据
+#        if self.__InitialZref == Zother :
+#            self.__AllowLoadfile = True
+#        else:
+#            self.__AllowLoadfile = False
+            
+        data_int = self.data
+        
+        Z1 = self.Zref
+        Z2 = Zother
+        
+        # 列名
+        Sri_1 = self.__GetColsName("S", "RI", self.n, 1)   # 复数形式的列名
+        Sri_2 = data_int.columns.values.reshape(-1,2)
+        
+        # 变为复数形式
+        for i in range(len(Sri_1)):
+            data_int[Sri_1[i]] = data_int[Sri_2[i][0]]+data_int[Sri_2[i][1]]*1j 
+
+        # 计算得到 Sother 矩阵, 复数形式
+        data_S_ = data_int[Sri_1]
+        data_U_ = np.identity(self.n)
+        
+#        f = lambda data_S_p : ( np.dot( np.linalg.inv( (Z1/Z2)*np.dot(data_U_ + data_S_p.values.reshape(self.n,self.n) , np.linalg.inv(data_U_ - data_S_p.values.reshape(self.n,self.n)) ) + data_U_ ), \
+#              (Z1/Z2)*np.dot(data_U_ + data_S_p.values.reshape(self.n,self.n) , np.linalg.inv(data_U_ - data_S_p.values.reshape(self.n,self.n)) ) - data_U_ ) ).ravel()
+        
+        def f(data_S_p):
+            S_perline_sq = data_S_p.values.reshape(self.n,self.n)
+            Temp_ = (Z1/Z2)*np.dot(data_U_ + S_perline_sq , np.linalg.inv(data_U_ - S_perline_sq) )
+            Result_ = np.dot( np.linalg.inv( Temp_ + data_U_ ), Temp_ - data_U_ ) 
+            return Result_.ravel()        
+        
+        data_Sother = data_S_.apply(f,axis = 1)        
+        
+        # 变为实部虚部分开的形式
+          # 列名
+        Sri = self.__GetColsName("S", "RI", self.n, 2)
+        
+        for i in range(len(Sri_1)):
+            data_Sother[Sri[i*2]] = np.real( data_Sother[Sri_1[i]] )
+            data_Sother[Sri[i*2+1]] = np.imag( data_Sother[Sri_1[i]] )
+        
+        # 赋值
+        self.data = pd.DataFrame(data_Sother[Sri], index = self.data.index, columns = Sri)
+        self.format = "RI"       
+        
+    def sNp_toGetMixedModeLine(self, Smode = "SDD12", Sformat = "db", port1_pn = [1,3], port2_pn = [2,4]):
+        """
+          换为 Mixed-Mode S参数形式
+        """
+        
+        Smode_dict = {"SDD11":0, "SDD12":1, "SDC11":2, "SDC12":3, \
+                      "SDD21":4, "SDD22":5, "SDC21":6, "SDC22":7, \
+                      "SCD11":8, "SCD12":9, "SCC11":10, "SCC12":11, \
+                      "SCD21":12, "SCD22":13, "SCC21":14, "SCC22":15 }
+        
+        try:
+            Smode = Smode.upper()
+            Sformat = Sformat.lower()
+            Smode_dict[Smode]
+        except:
+            print("Smode error")
+            return None
+        
+        if Sformat not in ["db","ang","mag"]:
+            print("Sformat error")
+            return None
+        
+        # 转为 S 参数文件
+        if self.parameter == "Z":
+            self.sNp_toSparam()
+            
+        self.sNp_toRI()
+        
+#        # 控制后面的函数是否允许读取原 sNp 文件中的数据
+#        if self.__InitialZref == Zother :
+#            self.__AllowLoadfile = True
+#        else:
+#            self.__AllowLoadfile = False
+        
+        port1 = port1_pn[0]
+        port3 = port1_pn[1]
+        port2 = port2_pn[0]
+        port4 = port2_pn[1]
+
+        data_int = self.data[ self.__GetColsName("S", "RI", [port1, port2, port3, port4], 2) ]
+        
+        # 列名
+        Sri_1 = self.__GetColsName("S", "RI", [port1, port2, port3, port4], 1)   # 复数形式的列名
+        Sri_2 = data_int.columns.values.reshape(-1,2)
+        
+        # 变为复数形式
+        for i in range(len(Sri_1)):
+            data_int[Sri_1[i]] = data_int[Sri_2[i][0]]+data_int[Sri_2[i][1]]*1j 
+
+        # 计算得到 S 矩阵, 复数形式
+        data_S_ = data_int[Sri_1]
+        data_M_ = np.array([1,0,-1,0, 0,1,0,-1, 1,0,1,0, 0,1,0,1]).reshape(4,4)*1/np.sqrt(2)
+        
+#        f = lambda data_S_p : ( np.dot( np.linalg.inv( (Z1/Z2)*np.dot(data_U_ + data_S_p.values.reshape(self.n,self.n) , np.linalg.inv(data_U_ - data_S_p.values.reshape(self.n,self.n)) ) + data_U_ ), \
+#              (Z1/Z2)*np.dot(data_U_ + data_S_p.values.reshape(self.n,self.n) , np.linalg.inv(data_U_ - data_S_p.values.reshape(self.n,self.n)) ) - data_U_ ) ).ravel()
+        
+        def f(data_S_p):
+            S_perline_sq = data_S_p.values.reshape(4,4)
+            Temp_ = np.dot(data_M_ , S_perline_sq )
+            Result_ = np.dot( Temp_ , np.linalg.inv(data_M_) ) 
+            return Result_.ravel()[Smode_dict[Smode]]
+        # 为pandas.series
+        data_Sother = data_S_.apply(f,axis = 1)
+        # 转为df
+        data_Sother = pd.DataFrame(data_Sother.values, index = data_Sother.index, columns = [Smode+"_RI"])
+        # 计算 db, ang
+        data_Sother[Smode+"_dB"] = 20 * np.log10( np.abs( data_Sother[Smode+"_RI"] ).clip(1e-30,1e30) )
+        data_Sother[Smode+"_mag"] = np.abs( data_Sother[Smode+"_RI"] )
+        data_Sother[Smode+"_ang"] = np.rad2deg( np.angle( data_Sother[Smode+"_RI"] ) )
+
+        if Sformat == "ang":
+            return data_Sother[Smode+"_ang"]
+        elif Sformat == "mag":
+            return data_Sother[Smode+"_mag"]
+        else:
+            return data_Sother[Smode+"_dB"]
+        
