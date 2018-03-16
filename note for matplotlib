@@ -1,0 +1,104 @@
+
+Matpoltlib简单绘图方法
+
+####### import
+import matplotlib.pyplot as plt
+%matplotlib inline    jupyter notebook中直接直接将结果捕获成图片嵌入网页中
+%matplotlib notebook   将matplotlib生成的结果(是一个界面)嵌入网页中
+
+##### 绘图区域及子区域
+plt.figure(figsize=(8,7),dpi=98)  # 创建绘图组件的顶层容器
+p1 = plt.subplot(211)   # 子图行数、列数、序号
+p2 = plt.subplot(212)
+p1.plot()  # p1上增加曲线
+
+fig = plt.figure()
+ax = fig.add_subplot(abc) # 添加子图
+
+fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True) # 3个子图共用x轴
+
+#####
+plt.plot(t,v,"b--",linewidth=1,label="$sinc(x)$")      # 增加曲线
+plt.plot(x, y, 'ro', x, y1, 'g--')  # 一次增加金条曲线
+plt.xlabel(‘x’)           # x轴标签
+plt.ylabel(‘y’)           # y轴标签
+plt.title(‘…’)            # 图表标题
+
+plt.set_yscale("log")  # 将y轴log显示
+
+文本显示
+plt.text(3,-1,r'mu=100,sigma=15')
+
+添加注释
+ax.annotate('x', xy=(1,2), textcoords='offsetpoints',xytext=(-50, 30), arrowprops=dict(arrowstyle="->"))
+
+增加图例
+plt.legend(loc='best', fancybox=True)
+
+坐标范围
+plt.xlim(0,6)  #  设置x轴刻度范围，从0~1000
+plt.ylim(-2.5,2.5)   # 设置y轴刻度的范围，从0~20
+plt.axis([0, 6, -2.5, 2.5])   #[xmin, xmax, ymin, ymax]
+
+刻度线
+plt.xticks(np.linspace(0,6,10,endpoint=True))  # 设置x轴刻度
+plt.yticks(np.linspace(-2.5,2.5,10,endpoint=True))  # 设置y轴刻度
+
+格线
+plt.grid(True,linewidth=0.2,linestyle='--',alpha=0.5)
+
+显示
+plt.show()
+
+#######  对坐标取对数
+plt.semilogx()    横坐标
+plt.semilogy()    纵坐标
+plt.loglog()      横纵同时
+
+##### 着色 将图形的不同部分用不同颜色进行着色
+plt.fill_between(x_arr, y1_arr, y2_arr,
+                   where=y1>y2, facecolor="green", interpolate=True, alpha=0.4)
+
+####### 绘制直方图
+plt.hist(a,b)，a为长方形的左横坐标值，b为柱高
+
+####### 绘制散点图
+plt.scatter(x, y, c=x * 100, s=y * 100, marker="o", alpha=0.5)  # c 表示颜色 (=x*100, 即用不同颜色标示不同值)
+                                          s 表示大小 (=y*100, 即用不同大小标示不同值)
+                                          maker 是形状,可以是marker=（5，1） 5表示形状是5边型，1表示是星型(0表示多边形，2放射型，3圆形)
+
+####### 三维绘图
+
+from mpl_toolkits.mplot3d import Axes3D  #导入3d绘图库
+
+三维面图
+fig = plt.figure()
+ax = fig.gca(projection=’3d’)   #创建一个三维的绘图工程
+
+ax = fig.add_subplot(111, projection='3d')  #创建一个三维的绘图工程
+
+ax=plt.subplot(111,projection='3d') #创建一个三维的绘图工程
+
+X = np.arange(-4, 4, 0.25)
+Y = np.arange(-4, 4, 0.25)
+X, Y = np.meshgrid(X, Y)     # 相当于是由XY组成的坐标面
+
+Z = np.sin(np.sqrt(X**2 + Y**2)) # 对应的z轴值
+ax.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap='rainbow') # z的数据的z.shape是(len(y), len(x))
+                                                                 rstride 行数组坐标间隔,默认为10
+                                                                 cstride 列数组坐标间隔,默认为10
+plt.show()
+
+三维散点图
+ax.scatter(x,y,z,c='y') #绘制数据点
+
+z方向的投影等高线图
+ax.contourf(X, Y, Z, zdir='z', offset=-2, cmap=plt.cm.hot)  
+
+##### 极坐标绘图
+theta=np.arange(0,2*np.pi,0.02) 
+plt.subplot(122,polar=True)   # polar=True
+plt.plot(theta,np.cos(5*theta),'--',lw=2) 
+plt.plot(theta,2*np.cos(4*theta),lw=2)
+plt.rgrids(np.arange(0.5,2,0.5),angle=45)  # 绘制半径为0.5 1.0 1.5的三个同心圆，同时将这些半径的值标记在45度位置的那个直径上
+plt.thetagrids([0,45,90])  # 在theta为0，45，90度的位置上标记上度数
