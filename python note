@@ -1,0 +1,3 @@
+表达式
+c = a if a>b else b
+c = [b,a][a>b]     # 在python中True的默认值为1, False的默认值为0
