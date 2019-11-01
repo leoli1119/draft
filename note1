@@ -1,0 +1,1651 @@
+
+# -1- ################# NumPy ##########################
+import numpy as np
+
+NumPy的数组类被称作ndarray
+
+####### 常用属性 ########
+X.flags    #数组的存储情况信息。
+X.shape    #结果是一个tuple，返回本数组的行数、列数、……
+X.ndim     #数组的维数，结果是一个数
+X.size     #数组中元素的数量
+X.itemsize #数组中的数据项的所占内存空间大小
+X.dtype    #数据类型
+X.T        #如果X是矩阵，发挥的是X的转置矩阵
+X.trace()  #计算X的迹
+
+
+###### 创建
+array( [ [1,2], [3,4] ], dtype=complex )
+np.arange(2,3,0.1)       起点，终点，步长值。含起点值，不含终点值。
+np.linspace(1,4,10)      起点，终点，区间内点数。起点终点均包括在内
+np.logspace()
+zeros( (3,4) )           创建给定形状的 0‘s数组
+ones( (2,3,4), dtype=int16 )  创建给定形状的 1‘s数组
+empty( (2,3) )           创建一个没有使用特定值来初始化的数组
+zeros_like/ones_like/empty_like(数组A) 创建与数组A形状和数据类型都相同的指定数组
+eye, identity            生成一个NxN的单位方阵（对角线上为1，其它地方为0） 
+
+###### 数据类型转换
+astype 方法             显式的把一个数组的dtype转换或 投射 到另外的类型
+     a = np.array(['1.25', '-9.6', '42'], dtype=np.string_)
+     b = np.array([1.0,2.0])
+     a.astype(float) 或 a.astype(b.dtype)
+     array([ 1.25, -9.6 , 42. ])
+     
+     a.astype(np.array([""]).dtype) 将a换为字符串数组
+
+#######  数组元素
+arr[0,1]   取2维数组的单个元素
+arr[:,1]   第1列
+arr[1,:]   第1行
+
+######  布尔数组 (可以用或与非等操作)
+np.where(条件)
+       np.where(arr > 0, 2, -2)  arr中正值替换为2，负值替换为-2
+       index = np.where(arr>2)  得到值大于2的索引号
+       new_arr = arr[index]   arr中大于2的元素组成的数组
+       new_arr = np.delete(arr, index)  删除arr中元素值大于2的元素
+np.argwhere(条件)
+np.extract([条件],a)
+
+index = arr > 2              得到布尔数组,形如 array([False, False,  True,  True], dtype=bool)
+new_arr = arr[index] arr中大于2的元素组成的数组,可以用 ~index 来得到小于2的数组
+
+np.delete(arr, index) 删除arr中的索引为index中的元素
+ndarray.all()   如果所有元素都为真，那么返回真；否则返回假
+ndarray.any()   只要有一个元素为真则返回真
+ndarray.ptp(axis=None, out=None)  返回数组的最大值—最小值或者某轴的最大值—最小值
+ndarray.clip(a_min, a_max, out=None)   小于最小值的元素赋值为最小值，大于最大值的元素变为最大值,即对数据进行范围规定
+
+numpy.repeat(a, repeats, axis=None)   重复数组的元素
+numpy.tile(A, reps)         根据给定的reps重复数组A，和repeat不同，repeat是重复元素，该方法是重复数组。
+
+numpy.put(a, ind, v, mode=’raise’)   用v的值替换数组a中的ind（索引）的值。Mode可以为raise/wrap/clip。
+                                     Clip：如果给定的ind超过了数组的大小，那么替换最后一个元素。
+ndarray.compress(condition, axis=None, out=None)  指定轴上条件下的切片。
+ndarray.nonzero()                     非零元素的索引
+
+np.unique(arr)                          类似于元素去重  纯python中的类似命令:sorted(set(list))
+
+###### 改变形状
+ndarray.reshape(shape[, order])         返回重命名数组大小后的数组，不改变元素个数.
+ndarray.resize(new_shape[, refcheck])   改变数组的大小（可以改变数组中元素个数）.
+ndarray.transpose(*axes)                返回矩阵的转置矩阵
+ndarray.swapaxes(axis1, axis2)          交换两个轴的元素后的矩阵.
+ndarray.flatten([order])                复制一个一维的array出来.
+ndarray.ravel([order])                  返回为展平后的一维数组  (修改原数组)
+ndarray.squeeze([axis])                 移除长度为1的轴。
+ndarray.tolist()                        将数组转化为列表
+hstack((a,b))  concatenate（（a,b）,axis=1）   水平组合
+vstack((a,b))  concatenate（（a,b）,axis=0）   垂直组合
+dstack((a,b))                                 深度组合
+hsplit,vsplit,dsplit,split(split与concatenate相对应)   数组分割
+arr.flat[2:6]       将数组变为1维数组，并获取其中的一部分数据
+
+np.c_[] np.r_[]   分别添加行和列
+        np.c_[a,b] a,b均为数组
+np.column_stack((a,b)) 数组组合
+numpy.insert(arr, obj, values, axis=None) # (原始数组, 位置, 要插入的值, 行/列 如果为None则数组会被展开为一维)
+     np.insert(a, 1, 5, axis=1) 在数组a中,位置1处,插入值全部是5的一列
+
+np.searchsorted(a,b)   将b插入原有序数组a，并返回插入元素的索引值
+np.take(a,b)  一维 根据b中元素作为索引，查找a中对应元素
+	 
+#### 统计相关函数
+sum        对数组的所有或一个轴向上的元素求和。零长度的数组的和为0。 
+mean       算术平均值。灵长度的数组的均值为NaN。 
+std, var   标准差和方差，有可选的调整自由度（默认值为n）。 
+min, max   最大值和最小值 
+argmin, argmax     索引最小和最大元素。 
+cumsum     从0元素开始的累计和。 
+cumprod    从1元素开始的累计乘。 
+ndarray.prod(axis=None, dtype=None, out=None)   指定轴的所有元素乘积
+
+###### 随机数
+numpy.random 随机数生成
+np.random.rand(3,2)    产生一个3行2列的随机数组 同一空间下，有randn()/randint()等多个随机函数
+
+##### 复数
+array( [ [1,2], [3,4] ], dtype=complex )
+arr.imag            获得复数的虚部
+arr.real            获得复数的实部
+np.angle()      复数的辐角
+np.rad2deg()    弧度变为角度单位
+np.deg2rad(90)   角度转换
+ndarray.conj()   返回所有复数元素的共轭复数
+
+
+##### 数组集合操作
+
+unique(x)            计算x单一的元素，并对结果排序
+intersect1d(x, y)    计算x和y相同的元素，并对结果排序 
+union1d              结合x和y的元素，并对结果排序 
+in1d(x, y)           得到一个布尔数组指示x中的每个元素是否在y中 
+setdiff1d(x, y)      差集，在x中但不再y中的集合 
+setxor1d(x, y)       对称差集，不同时在两个数组中的元素 
+
+###### 积分
+np.trapz(y,x) # 相当于计算序列点(x,y)为顶点坐标的折线与x轴所夹的面积
+
+###### 数组函数
+abs, fabs     计算基于元素的整形，浮点或复数的绝对值。fabs对于没有复数数据的快速版本 
+sqrt          计算每个元素的平方根。等价于 arr  ** 0.5 
+square        计算每个元素的平方。等价于 arr  ** 2 
+exp           计算每个元素的指数。 
+log, log10, log2, log1p    自然对数（基于e），基于10的对数，基于2的对数和 log(1+ x) 
+sign          计算每个元素的符号：1(positive)，0(zero)， -1(negative) 
+ceil          计算每个元素的天花板，即大于或等于每个元素的最小值 , 向上取整
+floor         计算每个元素的地板，即小于或等于每个元素的最大值 
+rint          圆整每个元素到最近的整数，保留dtype 
+modf          分别返回分数和整数部分的数组 
+isnan         返回布尔数组标识哪些元素是 NaN （不是一个数） 
+isfinite, isinf      分别返回布尔数组标识哪些元素是有限的（non-inf, non-NaN）或无限的 
+			         arr[np.isfinite(arr)] 剔除数组中的相关项，将剩下的元素展平为一维数组数组
+cos, cosh, sin sinh, tan, tanh regular 和 hyperbolic          三角函数 
+arccos, arccosh, arcsin, arcsinh, arctan, arctanh             反三角函数 
+logical_not          计算基于元素的非x的真值。等价于 -arr 
+
+add           在数组中添加相应的元素 
+substract     在第一个数组中减去第二个数组 
+multiply      对数组元素相乘 
+divide, floor_divide       除和地板除（去掉余数） 
+power         使用第二个数组作为指数提升第一个数组中的元素 
+maximum, fmax     基于元素的最大值。 fmax 忽略 NaN 
+minimum, fmin     基于元素的最小值。 fmin 忽略 NaN 
+mod            基于元素的模（取余） 
+copysign       拷贝第二个参数的符号到第一个参数 
+greater, greater_equal, less, less_equal, not_equal   基于元素的比较，产生布尔数组。等价于中缀操作符 >,>=, <,
+                                                      <=,==, != 
+logical_and, logical_or, logical_xor                  计算各个元素逻辑操作的真值。等价于中缀操作符 &,|, ^ 
+
+arr.round(decimals=0)    指定精度下的四舍五入
+
+##### 矩阵  - 后面会废弃， 建议使用array
+NumPy 的 matrix 类型则可以直接用运算符号进行运算
+   A = np.matrix([[3, 6, -5], [1, -3, 2], [5, -1, 4]])
+   B = np.matrix([[12], [-2], [10]])
+   X = A ** (-1) * B
+
+
+数组排序
+     列排列np.msort(a)
+	 行排列np.sort(a)
+	 np.argsort(a)排序后返回下标
+     复数排序：np.sort_complex(a)按先实部后虚部排序
+
+     多个数组的对应位置上元素大小的比较：np.maximum(a,b,c,…..)返回每个索引位置上的最大值，np.minimum(…….)相反
+     将a中元素都置为b：a.fill(b)
+     每个数组元素的指数：np.exp(a)
+     点积（计算两个数组的线性组合）：np.dot(a,b)，即得到a*b（一维上是对应元素相乘，多维可将a*b视为矩阵乘法
+     所有数组元素乘积：a.prod()
+     数组元素的累积乘积：a.cumprod()
+     数组元素的符号：np.sign(a)，返回数组中各元素的正负符号，用1和-1表示
+     数组元素分类：np.piecewise(a,[条件]，[返回值])，分段给定取值，根据判断条件给元素分类，并返回设定的返回值。
+     判断两数组是否相等： np.array_equal(a,b)
+     判断数组元素是否为实数： np.isreal(a)
+     去除数组中首尾为0的元素：np.trim_zeros(a)
+     对浮点数取整，但不改变浮点数类型：np.rint(a)
+
+
+######## numpy.linalg 函数
+diag    返回一个方阵的对角线（或非对角线）元素为一个一维数组，或者转换一个一维数组到一个方阵（非对角线元素为零） 
+dot     矩阵乘积 
+trace   计算对角线上元素的和 
+det     计算矩阵行列式 
+eig     计算方阵的特征值和特征向量 
+inv     计算方阵转置 
+pinv    计算方阵 Moore-Penrose pseudo-inverse 的转置 
+qr      计算 QR 分解 
+svd     计算奇异值分解（SVD） 
+solve   求解线性系统方程 Ax = b 的x，其中A是一个方阵 
+lstsq   计算 y = Xb 的最小二乘解 
+np.linalg.logm(A)  计算矩阵A的对数
+cosm()/sinm()/signm()/sqrtm() 对矩阵进行计算
+cross, dot, outer, svd, vdot  
+
+######### 文档
+Python 读写文件文件虽然方便且效率很好，但是不太适合处理极大的文件。
+当文件内容有结构，且为数字时用 NumPy 处理，存 numpy.ndarray 会更合适。
+
+numpy.loadtxt()/numpy.savetxt()  载入txt文件
+numpy.genfromtxt()/numpy.recfromcsv()  智能导入文本/csv文件
+numpy.save()/numpy.load()  高速，有效率但numpy特有的二进制格式
+
+写入文件
+numpy.savetxt(fname, X, fmt=’%.18e’, delimiter=’ ‘, newline=’\n’, header=’‘, footer=’‘, comments=’#‘)
+   fname
+      指定文件名
+   X
+      要写入的数组
+   fmt : str or sequence of strs, optional
+      格式
+        %[标志]宽度[.精度]说明符
+         标志:   -: 左对齐
+                +: Forces to precede result with + or -  (使用 +/- 号)   ??????
+                0: 左边补0
+         宽度:   每个数据所占的最小宽度 (如果数据超过了此宽度也不会被截断)
+         精度:   对于e,E,f, 表示小数点后的位数
+                 对于s,     最大字符位数
+         说明符:  c     字符
+                 d,i   有符号十进制整数
+                 e,E   浮点数指数输出[e-(E-)记数法]
+                 f     浮点数
+                 g,G   浮点数不显无意义的零"0"
+                 u     无符号十进制整数
+                 o     八进制整数
+                 x,X   十六进制整数
+                 s     字符串
+   delimiter : str, optional
+      间隔符
+   newline : str, optional
+      换行符
+   header : str, optional
+      写到文件开头的字符串
+   footer : str, optional
+      写到文件结尾的字符串
+   comments : str, optional
+      加到以上字符串的开头作为注释用的字符,Default: ‘# ‘
+
+#############################
+
+indices = np.concatenate([np.arange(iy1, iy2) for iy1, iy2 in zip(y1.ravel(), y2.ravel())]
+
+# -2- ###################################################################################################
+
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+(1) 叠层信息,,,,,,(2) 焊盘信息,,,(5) 空气盒子相关信息(单位:mil),
+#Layer,layer type,thick(mil),dk,df,,两焊盘中心距 (mil),31.5,,仿真结构PCB块的X尺寸,200
+,SM,0.6,3.4,0.045,,焊盘形状(0-圆形; 1-矩形),1,,仿真结构PCB块的Y尺寸,250
+L1,signal,1.89,3.4,0.045,,对于圆形焊盘,,,空气盒子到PCB表层的最小高度距离,50
+,PP,10.62,3.28,0.025,,圆形焊盘直径 (mil),17,,,
+L2,plane,1.18,3.28,0.025,,对于矩形焊盘,,,(6) 仿真频率(单位:GHz),
+,,,,,,矩形焊盘短边长度 (mil),24,,求解频率,5
+,,,,,,矩形焊盘长边长度 (mil),91,,"频率扫描范围, 最大到",20
+,,,,,,锡球在矩形焊盘上的位置(与焊盘边长之比),0.5,,,
+,,,,,,,,,,
+,,,,,,(3) 参考层挖空区域信息,,,,
+,,,,,,挖空类型(0不挖空;1整体;2单独),2,,,
+,,,,,,对于圆形焊盘挖空区,,,,
+,,,,,,圆形焊盘边沿到挖空区边沿间距 (mil),2,,,
+,,,,,,对于矩形焊盘挖空区,,,,
+,,,,,,矩形焊盘长边到挖空区边沿间距 (mil),2,,,
+,,,,,,矩形焊盘短边到挖空区边沿间距 (mil),2,,,
+,,,,,,,,,,
+,,,,,,(4) 端口相关信息 (模型中的波端口会进行去嵌),,,,
+,,,,,,引出的短差分线线宽(单位:mil),4,,,
+,,,,,,引出的短差分线线距(单位:mil),4,,,
+,,,,,,"外层线端口宽度,端口边到线边距(*W)",5,,,
+,,,,,,外层线端口高度(*H),8,,,
+,,,,,,,,,,
+,,,,,,注:,,,,
+,,,,,,"(1) 叠层信息中必须要包含SolderMask层, 且有效数据从第8行开始录入",,,,
+,,,,,,"(2) 叠层信息数据按照示例录入, 必须包含4个完整的数据列: layer type ,thick, dk, df",,,,
+,,,,,,"(3) 对于layer type列的金属层:
+    plane层在生成的模型中是一个金属平面, signal层如果没有信号线存在则会完全用相应的PP进行填充",,,,
+,,,,,,,,,,
+,,,,,,"(4) df列必须位于E列, 其最后一个有效数据下方的所有单元格应保持为空; 只能包含4个层面的数据",,,,
+,,,,,,(5) 斜体带下滑线的数据在生成的模型中会转换为变量,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+
+
+# -3- ##############################################################################################################
+
+Option Explicit
+Sub GenDiffCompPad()
+    
+    'lihuan 201800531
+    
+    ''py 脚本名
+    Dim pyscriptfile As String
+    pyscriptfile = "DiffCompPadGen_ok_V1p0.py"
+    
+    '''''''''''
+    
+    Dim nlastrow As Integer, i As Integer
+
+    Dim dfvalue As String, dkvalue As String, tvalue As String, layertypevalue As String
+    Dim Ttemp_value As String
+    
+    Dim TEMPpath As String
+    
+    Dim Dalltext_n As Object  '数字无单位的项
+    Dim Dalltext_mil As Object  '单位mil的项
+    Dim Dalltext_ghz As Object  '单位ghz的项
+    Dim elem_temp
+    Set Dalltext_n = CreateObject("Scripting.Dictionary")
+    Set Dalltext_mil = CreateObject("Scripting.Dictionary")
+    Set Dalltext_ghz = CreateObject("Scripting.Dictionary")
+
+    '指示是否执行dos命令,有任何错误都不会执行最后的dos命令
+    Dim Bexecline As Boolean
+    Bexecline = True
+
+    Dim outfile As String  '用于输出文本文件
+
+    '读取叠层
+    'nlastrow = Range("E300").End(xlUp).Row    '以df列为准, df列最后一个有值的行的行号
+    nlastrow = 11     '只读取4个层的数据: 8-11 行的数据
+    
+    ''df
+    dfvalue = "t_PP_df = ["
+    
+    If Trim(CStr(Range("E8").Value)) <> "" Then
+        Ttemp_value = Trim(CStr(Range("E8").Value))
+        If Ttemp_value Like ".*" Then
+            dfvalue = dfvalue & Chr(34) & "0" & Ttemp_value & Chr(34)
+        Else
+            dfvalue = dfvalue & Chr(34) & Ttemp_value & Chr(34)
+        End If
+    Else
+        MsgBox "df列信息有误"
+        Bexecline = False
+    End If
+    
+    For i = 9 To nlastrow
+        If Trim(CStr(Range("E" & i).Value)) <> "" Then
+            Ttemp_value = Trim(CStr(Range("E" & i).Value))
+            If Ttemp_value Like ".*" Then
+                dfvalue = dfvalue & ", " & Chr(34) & "0" & Ttemp_value & Chr(34)
+            Else
+                dfvalue = dfvalue & ", " & Chr(34) & Ttemp_value & Chr(34)
+            End If
+        Else
+            MsgBox "df列信息有误"
+            Bexecline = False
+        End If
+    Next
+    
+    dfvalue = dfvalue & "]"
+    
+    ''dk
+    dkvalue = "t_PP_dk = ["
+    
+    If Trim(CStr(Range("D8").Value)) <> "" Then
+        Ttemp_value = Trim(CStr(Range("D8").Value))
+        If Ttemp_value Like ".*" Then
+            dkvalue = dkvalue & Chr(34) & "0" & Ttemp_value & Chr(34)
+        Else
+            dkvalue = dkvalue & Chr(34) & Ttemp_value & Chr(34)
+        End If
+    Else
+        MsgBox "dk列信息有误"
+        Bexecline = False
+    End If
+    
+    For i = 9 To nlastrow
+        If Trim(CStr(Range("D" & i).Value)) <> "" Then
+            Ttemp_value = Trim(CStr(Range("D" & i).Value))
+            If Ttemp_value Like ".*" Then
+                dkvalue = dkvalue & ", " & Chr(34) & "0" & Ttemp_value & Chr(34)
+            Else
+                dkvalue = dkvalue & ", " & Chr(34) & Ttemp_value & Chr(34)
+            End If
+        Else
+            MsgBox "dk列信息有误"
+            Bexecline = False
+        End If
+    Next
+    
+    dkvalue = dkvalue & "]"
+    
+    ''thick
+    tvalue = "t_Tpcb_list = ["
+    
+    If Trim(CStr(Range("C8").Value)) <> "" Then
+        Ttemp_value = Trim(CStr(Range("C8").Value))
+        If Ttemp_value Like ".*" Then
+            tvalue = tvalue & Chr(34) & "0" & Ttemp_value & "mil" & Chr(34)
+        Else
+            tvalue = tvalue & Chr(34) & Ttemp_value & "mil" & Chr(34)
+        End If
+    Else
+        MsgBox "thick列信息有误"
+        Bexecline = False
+    End If
+    
+    For i = 9 To nlastrow
+        If Trim(CStr(Range("C" & i).Value)) <> "" Then
+            Ttemp_value = Trim(CStr(Range("C" & i).Value))
+            If Ttemp_value Like ".*" Then
+                tvalue = tvalue & ", " & Chr(34) & "0" & Ttemp_value & "mil" & Chr(34)
+            Else
+                tvalue = tvalue & ", " & Chr(34) & Ttemp_value & "mil" & Chr(34)
+            End If
+        Else
+            MsgBox "thick列信息有误"
+            Bexecline = False
+        End If
+    Next
+    
+    tvalue = tvalue & "]"
+    
+    '计算并提示总厚度
+    'If Bexecline Then
+    '    Range("H36").Value = Format$(Application.WorksheetFunction.Sum(Range("c8:c" & nlastrow)), "Fixed")
+    '    Range("H37").Value = Format$(Range("H36").Value / 39.37, "Fixed")
+    '    MsgBox "PCB总厚度为: " & Range("H37").Value & "mm (" & Range("H36").Value & "mil)"
+    'End If
+        
+    ''layer type
+    layertypevalue = "t_Layertype = ["
+    
+    If Trim(CStr(Range("B8").Value)) <> "" Then
+        Ttemp_value = Trim(CStr(Range("B8").Value))
+        If Ttemp_value Like ".*" Then
+            layertypevalue = layertypevalue & Chr(34) & "0" & Ttemp_value & Chr(34)
+        Else
+            layertypevalue = layertypevalue & Chr(34) & Ttemp_value & Chr(34)
+        End If
+    Else
+        MsgBox "layer type列信息有误"
+        Bexecline = False
+    End If
+    
+    For i = 9 To nlastrow
+        If Trim(CStr(Range("B" & i).Value)) <> "" Then
+            Ttemp_value = Trim(CStr(Range("B" & i).Value))
+            If Ttemp_value Like ".*" Then
+                layertypevalue = layertypevalue & ", " & Chr(34) & "0" & Ttemp_value & Chr(34)
+            Else
+                layertypevalue = layertypevalue & ", " & Chr(34) & Ttemp_value & Chr(34)
+            End If
+        Else
+            MsgBox "layer type列信息有误"
+            Bexecline = False
+        End If
+    Next
+    
+    layertypevalue = layertypevalue & "]"
+    
+    ''其他数据 使用字典 Dalltext
+    '(2)
+    Dalltext_mil.Add "t_PadCenter2PadCenter", "H7"
+    Dalltext_n.Add "t_ShapePad", "H8"
+    Dalltext_mil.Add "t_D_Pad", "H10"
+    Dalltext_mil.Add "t_Lpad_AntiShortside", "H12"
+    Dalltext_mil.Add "t_Lpad_AntiLongside", "H13"
+    Dalltext_n.Add "t_Ratio2Longside_OutTracePosition", "H14"
+
+    '(3)
+    Dalltext_n.Add "t_ShapeAntipad", "H17"
+    Dalltext_mil.Add "t_PadEdge2AntiEdge", "H19"
+    Dalltext_mil.Add "t_PadEdge2AntiEdge_AntiLongside", "H21"
+    Dalltext_mil.Add "t_PadEdge2AntiEdge_AntiShortside", "H22"
+
+    '(4)
+    Dalltext_mil.Add "t_W_trace", "H25"
+    Dalltext_mil.Add "t_S_trace", "H26"
+    Dalltext_n.Add "MsPortXsize", "H27"
+    Dalltext_n.Add "MsPortYsize", "H28"
+    '(5)
+    Dalltext_mil.Add "t_Lsize_x", "K7"
+    Dalltext_mil.Add "t_Lsize_y", "K8"
+    Dalltext_mil.Add "AirBoxHSizeaboveTOP", "K9"
+    '(7)
+    Dalltext_ghz.Add "Fsolution", "K12"
+    Dalltext_ghz.Add "Fmax", "K13"
+    
+    For Each elem_temp In Dalltext_mil.Keys()
+        If Trim(CStr(Range(Dalltext_mil.Item(elem_temp)).Value)) <> "" Then
+            Ttemp_value = Trim(CStr(Range(Dalltext_mil.Item(elem_temp)).Value))
+            If Ttemp_value Like ".*" Then
+                Dalltext_mil.Item(elem_temp) = elem_temp & "=" & Chr(34) & "0" & Ttemp_value & "mil" & Chr(34)
+            Else
+                Dalltext_mil.Item(elem_temp) = elem_temp & "=" & Chr(34) & Ttemp_value & "mil" & Chr(34)
+            End If
+        Else
+            MsgBox elem_temp & "信息有误, 位置" & Dalltext_mil(elem_temp)
+            Bexecline = False
+        End If
+    Next
+    
+    For Each elem_temp In Dalltext_ghz.Keys()
+        If Trim(CStr(Range(Dalltext_ghz.Item(elem_temp)).Value)) <> "" Then
+            Ttemp_value = Trim(CStr(Range(Dalltext_ghz.Item(elem_temp)).Value))
+            If Ttemp_value Like ".*" Then
+                Dalltext_ghz.Item(elem_temp) = elem_temp & "=" & Chr(34) & "0" & Ttemp_value & "GHz" & Chr(34)
+            Else
+                Dalltext_ghz.Item(elem_temp) = elem_temp & "=" & Chr(34) & Ttemp_value & "GHz" & Chr(34)
+            End If
+        Else
+            MsgBox elem_temp & "信息有误, 位置" & Dalltext_ghz(elem_temp)
+            Bexecline = False
+        End If
+    Next
+    
+    For Each elem_temp In Dalltext_n.Keys()
+        If Trim(CStr(Range(Dalltext_n.Item(elem_temp)).Value)) <> "" Then
+            Ttemp_value = Trim(CStr(Range(Dalltext_n.Item(elem_temp)).Value))
+            If Ttemp_value Like ".*" Then
+                Dalltext_n.Item(elem_temp) = elem_temp & "=" & Chr(34) & "0" & Ttemp_value & Chr(34)
+            Else
+                Dalltext_n.Item(elem_temp) = elem_temp & "=" & Chr(34) & Ttemp_value & Chr(34)
+            End If
+        Else
+            MsgBox elem_temp & "信息有误, 位置" & Dalltext_n(elem_temp)
+            Bexecline = False
+        End If
+    Next
+    
+    ''输出
+    '定义文本文件的名称
+    TEMPpath = Environ("TEMP")
+    outfile = TEMPpath & "\DiffCompPadGenDataInputFile.py"
+    'outfile = ThisWorkbook.Path & "\DiffViaGenDataInputFile.py"
+    '判断是否存在同名文本文件，存在先行删除
+    If Dir(outfile) <> "" Then
+        Kill outfile
+    End If
+    '将当前的数据读入数组
+    '使用print语句将数组中所有数据写入文本文件
+    Open outfile For Output As #1
+    '输出信息到文本
+    Print #1, layertypevalue
+    Print #1, tvalue
+    Print #1, dkvalue
+    Print #1, dfvalue
+    
+    For Each elem_temp In Dalltext_mil.Keys()
+        Print #1, Dalltext_mil.Item(elem_temp)
+    Next
+    
+    For Each elem_temp In Dalltext_ghz.Keys()
+        Print #1, Dalltext_ghz.Item(elem_temp)
+    Next
+    
+    For Each elem_temp In Dalltext_n.Keys()
+        Print #1, Dalltext_n.Item(elem_temp)
+    Next
+
+    '关闭文本文件
+    Close #1
+
+    ''执行dos命令
+
+    Dim ansyspath As String, pyfilepath As String
+    
+    If Environ("SIWAVE_INSTALL_DIR") <> "" And Dir(Environ("SIWAVE_INSTALL_DIR") & "\ansysedt.exe") <> "" Then
+        ansyspath = Environ("SIWAVE_INSTALL_DIR") & "\ansysedt.exe"
+    Else
+        MsgBox "ansysedt.exe 文件没找到, 请指定"
+        
+        ansyspath = Application.GetOpenFilename("ansysedt.exe文件,*.exe", 1, "请在软件的安装目录下选择ansysedt.exe文件")
+        If Dir(ansyspath) = "" Then
+            MsgBox "ansysedt.exe 路径没找到"
+            Bexecline = False
+        End If
+    End If
+    
+    If Dir(ThisWorkbook.Path & "\" & pyscriptfile) <> "" Then
+        pyfilepath = ThisWorkbook.Path & "\" & pyscriptfile
+    Else
+        MsgBox "py脚本文件没找到"
+        Bexecline = False
+    End If
+
+    If Dir(outfile) <> "" And Bexecline Then
+        Dim WSH, wExec, sCmd As String
+        Set WSH = CreateObject("WScript.Shell")
+        Set wExec = WSH.Exec(ansyspath & " -RunScript " & pyfilepath)
+        'Set wExec = WSH.Exec(ansyspath & " -RunScript " & pyfilepath)
+        Set wExec = Nothing
+        Set WSH = Nothing
+    End If
+
+End Sub
+
+
+###############################################################################################################
+
+# --------------------- ANSYS Electronics Desktop -------------------------
+# lihuan 
+# 
+# 20180913 - initial 
+# 20180914 - update port info in excel gui , add port deembed comment
+# 20190131 - update excel gui, update the way to define the path of ansysedt.exe
+#
+# ----------------------------------------------
+
+##################################### ------- input ------- ####################
+
+import os
+datainputfile = os.getenv("TEMP") + "\DiffCompPadGenDataInputFile.py"
+
+with open(datainputfile,"r") as datafile:
+	for exeline in datafile.readlines():
+		exec(exeline.strip())
+
+		
+#################################### ------- input ------- ######################
+
+####   ----- def function -----
+def addmaterial(obj, Tname, TdkORpermeability, TdfORcond) :
+	if Tname[0:3].lower() != "cop" :
+		obj.AddMaterial(
+			[
+				"NAME:" + Tname ,
+				"CoordinateSystemType:=", "Cartesian",
+				"BulkOrSurfaceType:="	, 1,
+				[
+					"NAME:PhysicsTypes",
+					"set:="			, ["Electromagnetic","Thermal","Structural"]
+				],
+				"permittivity:="	, TdkORpermeability ,
+				"dielectric_loss_tangent:=", TdfORcond ,
+				"thermal_conductivity:=", "0.294",
+				"mass_density:="	, "1900",
+				"specific_heat:="	, "1150",
+				"youngs_modulus:="	, "11000000000",
+				"poissons_ratio:="	, "0.28",
+				"thermal_expansion_coeffcient:=", "1.5e-005"
+			])
+	else :
+		obj.AddMaterial(
+			[
+				"NAME:" + Tname ,
+				"CoordinateSystemType:=", "Cartesian",
+				"BulkOrSurfaceType:="	, 1,
+				[
+					"NAME:PhysicsTypes",
+					"set:="			, ["Electromagnetic","Thermal","Structural"]
+				],
+				"permeability:="	, TdkORpermeability ,
+				"conductivity:="	, TdfORcond ,
+				"thermal_conductivity:=", "400",
+				"mass_density:="	, "8933",
+				"specific_heat:="	, "385",
+				"youngs_modulus:="	, "120000000000",
+				"poissons_ratio:="	, "0.38",
+				"thermal_expansion_coeffcient:=", "1.77e-005"
+			])
+	return
+
+def creatbox(obj, xP, yP, zP, xL, yL, zL, Tname, Tcolor, Num_trans, Tmate) :
+	obj.CreateBox(
+		[
+			"NAME:BoxParameters",
+			"XPosition:="		, xP ,
+			"YPosition:="		, yP ,
+			"ZPosition:="		, zP ,
+			"XSize:="		, xL ,
+			"YSize:="		, yL ,
+			"ZSize:="		, zL 
+		], 
+		[
+			"NAME:Attributes",
+			"Name:="		, Tname ,
+			"Flags:="		, "",
+			"Color:="		, Tcolor ,
+			"Transparency:="	, Num_trans ,
+			"PartCoordinateSystem:=", "Global",
+			"UDMId:="		, "",
+			"MaterialValue:="	, "\"" + Tmate + "\"" ,
+			"SurfaceMaterialValue:=", "\"\"",
+			"SolveInside:="		, Tmate != "Copper_5d8E7",   # False for metal, True for PP
+			"IsMaterialEditable:="	, True
+		])
+	return	
+
+def createcylinder(obj, xP, yP, zP, Rradius, Lheight, Tname, Tcolor, Num_trans, Tmate) :
+	obj.CreateCylinder(
+		[
+			"NAME:CylinderParameters",
+			"XCenter:="		, xP ,
+			"YCenter:="		, yP ,
+			"ZCenter:="		, zP ,
+			"Radius:="		, Rradius ,
+			"Height:="		, Lheight ,
+			"WhichAxis:="		, "Z",
+			"NumSides:="		, "0"
+		], 
+		[
+			"NAME:Attributes",
+			"Name:="		, Tname ,
+			"Flags:="		, "",
+			"Color:="		,  Tcolor ,
+			"Transparency:="	, Num_trans ,
+			"PartCoordinateSystem:=", "Global",
+			"UDMId:="		, "",
+			"MaterialValue:="	,  "\"" + Tmate + "\"" ,
+			"SurfaceMaterialValue:=", "\"\"",
+			"SolveInside:="		, Tmate not in ["Copper_5d8E7", "pec"] ,   # False for metal, True for PP
+			"IsMaterialEditable:="	, True
+		])	
+	return		
+	
+def subtract(obj, Tblankpart, Ltoolpart, Bool_KeepOriginal) :
+	Ltoolpart_ = Ltoolpart[0]
+	if len( Ltoolpart ) > 1 :
+		for i,v in enumerate( Ltoolpart ) :
+			if i > 0 :
+				Ltoolpart_ += ("," + v)
+	obj.Subtract(
+		[
+			"NAME:Selections",
+			"Blank Parts:="		, Tblankpart ,
+			"Tool Parts:="		, Ltoolpart_
+		], 
+		[
+			"NAME:SubtractParameters",
+			"KeepOriginals:="	, Bool_KeepOriginal
+		])
+	return
+
+def unite( obj, Ltoolpart, Bool_KeepOriginal ) :
+	if len( Ltoolpart ) >= 2:
+		Ltoolpart_ = Ltoolpart[0]
+		if len( Ltoolpart ) > 1 :
+			for i,v in enumerate( Ltoolpart ) :
+				if i > 0 :
+					Ltoolpart_ += ("," + v)
+		obj.Unite(
+			[
+				"NAME:Selections",
+				"Selections:="		, Ltoolpart_ 
+			], 
+			[
+				"NAME:UniteParameters",
+				"KeepOriginals:="	, Bool_KeepOriginal
+			])	
+	return	
+
+# add Rectangle sheet
+def addrect( obj, LCrossSectionXYZ_t, LWandH_t, Tname, Tcolor, Num_trans, Tmate) :
+	# rectangle cross section
+	obj.CreateRectangle(
+		[
+		"NAME:RectangleParameters",
+		"IsCovered:="		, True,
+		"XStart:="		, LCrossSectionXYZ_t[0] ,
+		"YStart:="		, LCrossSectionXYZ_t[1] ,
+		"ZStart:="		, LCrossSectionXYZ_t[2] ,
+		"Width:="		, LWandH_t[0] ,
+		"Height:="		, LWandH_t[1] ,
+		"WhichAxis:="		, "Y"
+		], 
+		[
+			"NAME:Attributes",
+			"Name:="		, Tname,
+			"Flags:="		, "",
+			"Color:="		, Tcolor,
+			"Transparency:="	, Num_trans,
+			"PartCoordinateSystem:=", "Global",
+			"UDMId:="		, "",
+			"MaterialValue:="	,  "\"" + Tmate + "\"" ,
+			"SurfaceMaterialValue:=", "\"\"",
+			"SolveInside:="		,  Tmate != "Copper_5d8E7",   # False for metal, True for PP
+			"IsMaterialEditable:="	, True
+		])		
+
+def addrect_Z( obj, LCrossSectionXYZ_t, LWandH_t, Tname, Tcolor, Num_trans, Tmate) :
+	obj.CreateRectangle(
+		[
+		"NAME:RectangleParameters",
+		"IsCovered:="		, True,
+		"XStart:="		, LCrossSectionXYZ_t[0] ,
+		"YStart:="		, LCrossSectionXYZ_t[1] ,
+		"ZStart:="		, LCrossSectionXYZ_t[2] ,
+		"Width:="		, LWandH_t[0] ,
+		"Height:="		, LWandH_t[1] ,
+		"WhichAxis:="		, "Z"
+		], 
+		[
+			"NAME:Attributes",
+			"Name:="		, Tname,
+			"Flags:="		, "",
+			"Color:="		, Tcolor,
+			"Transparency:="	, Num_trans,
+			"PartCoordinateSystem:=", "Global",
+			"UDMId:="		, "",
+			"MaterialValue:="	,  "\"" + Tmate + "\"" ,
+			"SurfaceMaterialValue:=", "\"\"",
+			"SolveInside:="		,  Tmate not in ["Copper_5d8E7", "pec"],   # False for metal, True for PP
+			"IsMaterialEditable:="	, True
+		])			
+		
+# add rectangle cross section signal trace
+# LCrossSectionXYZ_t -> [x,y,z] ; LWandH_t -> [w,h] ; Lpath_3pXYZ -> [(x0,y0,z0),(x1,y1,z1),(x2,y2,z2)]
+def addrecttrace( obj, LCrossSectionXYZ_t, LWandH_t, Lpath_3pXYZ, Tname, Tcolor, Num_trans, Tmate) :
+	# rectangle cross section
+	addrect( obj, LCrossSectionXYZ_t, LWandH_t, Tname, Tcolor, Num_trans, Tmate)	
+	obj.CreatePolyline(
+		[
+			"NAME:PolylineParameters",
+			"IsPolylineCovered:="	, True,
+			"IsPolylineClosed:="	, False,
+			[
+				"NAME:PolylinePoints",
+				[
+					"NAME:PLPoint",
+					"X:="			, Lpath_3pXYZ[0][0],
+					"Y:="			, Lpath_3pXYZ[0][1],
+					"Z:="			, Lpath_3pXYZ[0][2]
+				],
+				[
+					"NAME:PLPoint",
+					"X:="			, Lpath_3pXYZ[1][0],
+					"Y:="			, Lpath_3pXYZ[1][1],
+					"Z:="			, Lpath_3pXYZ[1][2]
+				],
+				[
+					"NAME:PLPoint",
+					"X:="			, Lpath_3pXYZ[2][0],
+					"Y:="			, Lpath_3pXYZ[2][1],
+					"Z:="			, Lpath_3pXYZ[2][2]
+				]
+			],
+			[
+				"NAME:PolylineSegments",
+				[
+					"NAME:PLSegment",
+					"SegmentType:="		, "Line",
+					"StartIndex:="		, 0,
+					"NoOfPoints:="		, 2
+				],
+				[
+					"NAME:PLSegment",
+					"SegmentType:="		, "Line",
+					"StartIndex:="		, 1,
+					"NoOfPoints:="		, 2
+				]
+			],
+			[
+				"NAME:PolylineXSection",
+				"XSectionType:="	, "None",
+				"XSectionOrient:="	, "Auto",
+				"XSectionWidth:="	, "0mil",
+				"XSectionTopWidth:="	, "0mil",
+				"XSectionHeight:="	, "0mil",
+				"XSectionNumSegments:="	, "0",
+				"XSectionBendType:="	, "Corner"
+			]
+		], 
+		[
+			"NAME:Attributes",
+			"Name:="		, Tname + "_TraceSweepPath",
+			"Flags:="		, "",
+			"Color:="		, "(143 175 143)",
+			"Transparency:="	, 0,
+			"PartCoordinateSystem:=", "Global",
+			"UDMId:="		, "",
+			"MaterialValue:="	, "\"vacuum\"",
+			"SurfaceMaterialValue:=", "\"\"",
+			"SolveInside:="		, True,
+			"IsMaterialEditable:="	, True
+		])	
+	obj.SweepAlongPath(
+		[
+			"NAME:Selections",
+			"Selections:="		, Tname + "," + Tname + "_TraceSweepPath",
+			"NewPartsModelFlag:="	, "Model"
+		], 
+		[
+			"NAME:PathSweepParameters",
+			"DraftAngle:="		, "0deg",
+			"DraftType:="		, "Round",
+			"CheckFaceFaceIntersection:=", False,
+			"TwistAngle:="		, "0deg"
+		])	
+	return
+
+# add local variable , obj -> oDesign
+def addlocalvariable( obj, Tvariablename, Tdefaultvalue, Tdescription) :
+	obj.ChangeProperty(
+		[
+			"NAME:AllTabs",
+			[
+				"NAME:LocalVariableTab",
+				[
+					"NAME:PropServers", 
+					"LocalVariables"
+				],
+				[
+					"NAME:NewProps",
+					[
+						"NAME:" + Tvariablename ,
+						"PropType:="		, "VariableProp",
+						"UserDef:="		, True,
+						"Value:="		, Tdefaultvalue
+					]
+				],
+				[
+					"NAME:ChangedProps",
+					[
+						"NAME:" + Tvariablename ,
+						"Description:="		, Tdescription
+					]
+				]
+			]
+		])
+
+# get voidstruct, ellipsoid void on plane
+def ellipsoid_voidstruct( obj , Space_via2via_t , D_antipad_t , Z_startvalue_t, thick_t , voidstruct_name_t ) :
+	creatbox(obj, Space_via2via_t + "/2*(-1)", D_antipad_t + "/2*(-1) ", Z_startvalue_t,\
+			Space_via2via_t, D_antipad_t, thick_t,\
+			voidstruct_name_t, "(143 175 143)" , 0, "vacuum")
+	createcylinder(obj, Space_via2via_t + "/2", "0mil", Z_startvalue_t,\
+			D_antipad_t + "/2", thick_t,\
+			voidstruct_name_t + "_Pvoid_ellipsoid", "(143 175 143)", 0, "vacuum")		
+	createcylinder(obj, Space_via2via_t + "/2*(-1)", "0mil", Z_startvalue_t,\
+			D_antipad_t + "/2", thick_t,\
+			voidstruct_name_t + "_Nvoid_ellipsoid", "(143 175 143)", 0, "vacuum")		
+	Ltoolpart_t = [voidstruct_name_t, voidstruct_name_t + "_Pvoid_ellipsoid", voidstruct_name_t + "_Nvoid_ellipsoid"]
+	unite( obj, Ltoolpart_t, False )
+	return 	
+		
+def addcircle_Z( obj, xP, yP, zP, Rradius, Tname, Tcolor, Num_trans, Tmate) :
+	obj.CreateCircle(
+		[
+			"NAME:CircleParameters",
+			"IsCovered:="		, True,
+			"XCenter:="		, xP ,
+			"YCenter:="		, yP ,
+			"ZCenter:="		, zP ,
+			"Radius:="		, Rradius ,
+			"WhichAxis:="		, "Z",
+			"NumSegments:="		, "0"
+		], 
+		[
+			"NAME:Attributes",
+			"Name:="		, Tname,
+			"Flags:="		, "",
+			"Color:="		, Tcolor,
+			"Transparency:="	, Num_trans,
+			"PartCoordinateSystem:=", "Global",
+			"UDMId:="		, "",
+			"MaterialValue:="	,  "\"" + Tmate + "\"" ,
+			"SurfaceMaterialValue:=", "\"\"",
+			"SolveInside:="		,  Tmate not in ["Copper_5d8E7", "pec"],   # False for metal, True for PP
+			"IsMaterialEditable:="	, True
+		])		
+	
+	
+####   ----- def function -----
+
+# begin here # *****************************************************************
+##### ------++--- project --+++---
+SProjectName = "HFSSDesign_DiffCompPad"
+
+import ScriptEnv
+ScriptEnv.Initialize("Ansoft.ElectronicsDesktop")
+oDesktop.RestoreWindow()
+oProject = oDesktop.NewProject()
+oProject.InsertDesign("HFSS", SProjectName, "DrivenTerminal", "")
+
+#_#   design editor
+oDesign = oProject.SetActiveDesign( SProjectName )
+oEditor = oDesign.SetActiveEditor("3D Modeler")
+
+# design setting
+oDesign.SetDesignSettings(
+	[
+		"NAME:Design Settings Data",
+		"Use Advanced DC Extrapolation:=", False,
+		"Use Power S:="		, False,
+		"Export After Simulation:=", False,
+		"Allow Material Override:=", True,
+		"Calculate Lossy Dielectrics:=", True,
+		"Perform Minimal validation:=", False,
+		"EnabledObjects:="	, [],
+		"Port Validation Settings:=", "Standard"
+	], 
+	[
+		"NAME:Model Validation Settings",
+		"EntityCheckLevel:="	, "Strict",
+		"IgnoreUnclassifiedObjects:=", False,
+		"SkipIntersectionChecks:=", False
+	])
+
+# ---------------------------------
+# add local variable
+local_variable_list = [ \
+("t_Lsize_x", t_Lsize_x, "PCB block X size"), \
+("t_Lsize_y", t_Lsize_y, "PCB block Y size"), \
+#
+("t_W_trace", t_W_trace, "width of diff signal trace"), \
+("t_S_trace", t_S_trace, "space of diff signal trace"), \
+#
+("t_PadCenter2PadCenter", t_PadCenter2PadCenter, "two pad center distance, Pad Center to Pad Center") \
+]
+
+if t_ShapePad == "0":     # "0" - circle 
+	local_variable_list.append( ("t_D_Pad", t_D_Pad, "diameter of circle pad") )
+	if t_ShapeAntipad != "0" :  # with void
+		local_variable_list.append( ("t_PadEdge2AntiEdge", t_PadEdge2AntiEdge, "space of pad edge to void edge") )
+
+
+if t_ShapePad == "1":     # "1" - rectangle
+	local_variable_list.append( ("t_Lpad_AntiShortside", t_Lpad_AntiShortside, "length of pad short side ") )
+	local_variable_list.append( ("t_Lpad_AntiLongside", t_Lpad_AntiLongside, "length of pad long side") )
+	local_variable_list.append( ("t_Ratio2Longside_OutTracePosition", t_Ratio2Longside_OutTracePosition, "from 0 to 1 ,  Position of Output ball , Ratio to pad long side , 0 - shortest stub , 1 - longest stub") )	
+	if t_ShapeAntipad != "0" :  # with void
+		local_variable_list.append( ("t_PadEdge2AntiEdge_AntiLongside", t_PadEdge2AntiEdge_AntiLongside, "pad long side space from pad edge to void edge") )
+		local_variable_list.append( ("t_PadEdge2AntiEdge_AntiShortside", t_PadEdge2AntiEdge_AntiShortside, "pad short side space from pad edge to void edge") )
+
+for i in local_variable_list :
+	addlocalvariable( oDesign, i[0], i[1], i[2] )
+	exec( i[0] + "=" + "\"" + i[0]  + "\"" )
+
+##### ------++--- project --+++---
+
+# __00___ input value process and check the value
+
+#
+t_Lsize = [t_Lsize_x, t_Lsize_y]    # [x,y] , PCB block size
+#
+
+Ttotalthick = "0mil"        # not include solder layer
+for i in t_Tpcb_list[1::] :
+	Ttotalthick = Ttotalthick + "+" + i
+	
+# check stackup info
+if not len( t_Layertype ) == len( t_Tpcb_list ) == len( t_PP_dk ) == len( t_PP_df ) == 4 :
+	oDesktop.AddMessage("", "", 2, "DiffCompPadPyfile --- stackup info error")
+# check layer type
+CheckLayerType = [ ( i.lower() in ["plane","gnd","pwr","power","p","ground"] ) for i in t_Layertype ]
+if ( True not in CheckLayerType ) :
+	oDesktop.AddMessage("", "", 2, "DiffCompPadPyfile --- layer type error, no plane layer")	
+# check soldermask layer info
+if ( t_Layertype[0].lower() not in ["sm", "solder", "soldermask"] ) :
+	oDesktop.AddMessage("", "", 2, "DiffCompPadPyfile --- no solder mask layer")
+
+# __00___ check input value
+
+# __01___ material and color list
+MaterialList = []   # include PP and cppper
+PPMaterialList = []  # just pp
+PP_Material_layer = []   # include solder layer
+for i,v in enumerate(t_PP_dk) :
+	PP_Material_layer.append( ("PP_" + v + "_" + t_PP_df[i] ).replace(".","d") )
+MaterialList = list(set(PP_Material_layer))   # ['PP_4d1_0d025', 'PP_4_0d025', 'PP_3d4_0d045'] 
+PPMaterialList = list(set(PP_Material_layer)) # ['PP_4d1_0d025', 'PP_4_0d025', 'PP_3d4_0d045'] 
+MaterialList.append("Copper_5d8E7")           # add "Copper_5d8E7"
+
+MaterialColor = {}
+Materialcolor_layer = []  # include solder layer
+for i,v in enumerate( MaterialList ) :
+	if v != "Copper_5d8E7" :
+		MaterialColor[v] = str( (0, 220 - int( (220-100)/len(MaterialList) )*i, 0) )    # solder_color = "(0, 255, 0)"
+	MaterialColor["Copper_5d8E7"] = "(240, 240, 0)"  # copper color 
+for i in PP_Material_layer :
+	Materialcolor_layer.append( MaterialColor[i] )
+# __01___ material and color list
+
+# __02___ add new material (include pp and copper)
+oDefinitionManager = oProject.GetDefinitionManager()
+
+for i in MaterialList :
+	if i != "Copper_5d8E7" :
+		j = i.split("_")
+		j_dk = j[1].replace("d", ".")   # '4.0'
+		j_df = j[2].replace("d", ".")   # '0.025'	
+		addmaterial(oDefinitionManager, i, j_dk, j_df)
+	else :
+		addmaterial(oDefinitionManager, i, "0.999991", "5.8E7")
+# __02___ add new material
+
+# __03__ stackup
+Tthick = "0mil"
+
+if t_ShapeAntipad == "0" : # if no void , no last pp layer
+	t_Tpcb_list_ = t_Tpcb_list[1:-1]     # t_Tpcb_list = ["0.6mil"  , "1.89mil" , "2.75mil" , "1.18mil" ]
+else :
+	t_Tpcb_list_ = t_Tpcb_list[1::]
+	
+for i,v in enumerate( t_Tpcb_list_ ) :  
+	creatbox(oEditor, t_Lsize[0]+ "/2*(-1)",  t_Lsize[1]+ "/2*(-1)", Tthick, \
+			t_Lsize[0], t_Lsize[1], v, \
+			"PP_" + "{:0>3}".format(i), Materialcolor_layer[1::][i], 0.7, PP_Material_layer[1::][i])
+	Tthick = Tthick + "+" + v   # sum thick
+	
+# __03__ stackup
+
+# __04___ gnd plane(with void if exist) 
+
+# _ a _ var process
+
+if t_ShapePad == "0":     # "0" - circle 
+	t_Lxy_PadCenterPosition_p = [ t_PadCenter2PadCenter + "/2" , "0mil"]
+	t_Lxy_PadCenterPosition_n = [ t_PadCenter2PadCenter + "/2" + "*(-1)" , "0mil"]
+
+if t_ShapePad == "1":     # "1" - rectangle
+	t_Lxy_PadCenterPosition_p = [ t_PadCenter2PadCenter + "/2" , \
+	             "(" + "0.5-" + t_Ratio2Longside_OutTracePosition + ")" + "*" + "(" + t_Lpad_AntiLongside + "-" + t_Lpad_AntiShortside + ")" ]
+	t_Lxy_PadCenterPosition_n = [ t_PadCenter2PadCenter + "/2" + "*(-1)" , \
+                 "(" + "0.5-" + t_Ratio2Longside_OutTracePosition + ")" + "*" + "(" + t_Lpad_AntiLongside + "-" + t_Lpad_AntiShortside + ")" ]
+
+# _ b _ ref plane
+layer_RefStructure = []
+for i,v in enumerate( t_Layertype[1::] ) :
+	if v.lower() in ["plane","gnd","pwr","power","p","ground"] :
+		layer_RefStructure.append("refplane")
+	else :
+		layer_RefStructure.append("other")
+
+Tthick = "0mil"
+for i,v in enumerate( t_Tpcb_list[1::] ) :
+	if layer_RefStructure[i] == "refplane" :
+		creatbox(oEditor, t_Lsize[0]+ "/2*(-1)",  t_Lsize[1]+ "/2*(-1)", Tthick, \
+				t_Lsize[0], t_Lsize[1], v, \
+				"ref_" + "plane", MaterialColor["Copper_5d8E7"], 0, "Copper_5d8E7")	
+		
+		if t_ShapePad == "0":   # "0" - circle 
+			if t_ShapeAntipad == "1" :  # 1 - one rect anti
+				ellipsoid_voidstruct( oEditor , t_PadCenter2PadCenter , "(" + t_D_Pad + "+" + t_PadEdge2AntiEdge + "*2" + ")", Tthick, v , "refvoid_" + "onerect" )
+				subtract(oEditor, "ref_" + "plane", ["refvoid_" + "onerect"], False)
+			
+			elif t_ShapeAntipad == "2" :  # 2 - two rect anti
+				createcylinder(oEditor, t_Lxy_PadCenterPosition_p[0], t_Lxy_PadCenterPosition_p[1], Tthick,\
+						t_D_Pad + "/2" + "+" + t_PadEdge2AntiEdge, v, \
+						"refvoid_" + "tworect1", "(143 175 143)" , 0, "vacuum")
+				createcylinder(oEditor, t_Lxy_PadCenterPosition_n[0], t_Lxy_PadCenterPosition_n[1], Tthick,\
+						t_D_Pad + "/2" + "+" + t_PadEdge2AntiEdge, v, \
+						"refvoid_" + "tworect2", "(143 175 143)" , 0, "vacuum")				
+				subtract(oEditor, "ref_" + "plane", ["refvoid_" + "tworect1" , "refvoid_" + "tworect2"], False)
+				
+			else :  # 0 - no anti
+				pass
+				
+		if t_ShapePad == "1":   # "1" - rectangle
+			if t_ShapeAntipad == "1" :  # 1 - one rect anti
+				creatbox(oEditor, t_Lxy_PadCenterPosition_n[0] + "-" +  t_Lpad_AntiShortside + "/2" + "-" + t_PadEdge2AntiEdge_AntiLongside , \
+						t_Lxy_PadCenterPosition_n[1] + "-" +  t_Lpad_AntiLongside + "/2" + "-" + t_PadEdge2AntiEdge_AntiShortside ,\
+						Tthick,\
+						t_PadCenter2PadCenter + "+" + t_Lpad_AntiShortside + "+" + t_PadEdge2AntiEdge_AntiLongside + "*2", \
+						t_Lpad_AntiLongside + "+" + t_PadEdge2AntiEdge_AntiShortside + "*2", \
+						v,\
+						"refvoid_" + "onerect", "(143 175 143)" , 0, "vacuum")			
+				subtract(oEditor, "ref_" + "plane", ["refvoid_" + "onerect"], False)
+				
+			elif t_ShapeAntipad == "2" :  # 2 - two rect anti
+				creatbox(oEditor, t_Lxy_PadCenterPosition_p[0] + "-" +  t_Lpad_AntiShortside + "/2" + "-" + t_PadEdge2AntiEdge_AntiLongside , \
+						t_Lxy_PadCenterPosition_p[1] + "-" +  t_Lpad_AntiLongside + "/2" + "-" + t_PadEdge2AntiEdge_AntiShortside ,\
+						Tthick,\
+						t_Lpad_AntiShortside + "+" + t_PadEdge2AntiEdge_AntiLongside + "*2", \
+						t_Lpad_AntiLongside + "+" + t_PadEdge2AntiEdge_AntiShortside + "*2", \
+						v,\
+						"refvoid_" + "tworect1", "(143 175 143)" , 0, "vacuum")			
+				creatbox(oEditor, t_Lxy_PadCenterPosition_n[0] + "-" +  t_Lpad_AntiShortside + "/2" + "-" + t_PadEdge2AntiEdge_AntiLongside , \
+						t_Lxy_PadCenterPosition_n[1] + "-" +  t_Lpad_AntiLongside + "/2" + "-" + t_PadEdge2AntiEdge_AntiShortside ,\
+						Tthick,\
+						t_Lpad_AntiShortside + "+" + t_PadEdge2AntiEdge_AntiLongside + "*2", \
+						t_Lpad_AntiLongside + "+" + t_PadEdge2AntiEdge_AntiShortside + "*2", \
+						v,\
+						"refvoid_" + "tworect2", "(143 175 143)" , 0, "vacuum")		
+				subtract(oEditor, "ref_" + "plane", ["refvoid_" + "tworect1" , "refvoid_" + "tworect2"], False)
+				
+			else :  # 0 - no anti
+				pass
+	
+	Tthick = Tthick + "+" + v   # sum thick	
+# __04___ gnd plane(with void) 
+
+# __05__ pad and trace  __ and soldermask on trace (just on straight diff trace part )
+
+Tthick_pad = t_Tpcb_list[1::][0]
+
+if t_ShapePad == "0":     # "0" - circle 
+
+	# pad
+	createcylinder(oEditor, t_Lxy_PadCenterPosition_p[0], t_Lxy_PadCenterPosition_p[1], "0mil", t_D_Pad + "/2", Tthick_pad, \
+			"sig_pad_" + "p", MaterialColor["Copper_5d8E7"], 0, "Copper_5d8E7")	
+	createcylinder(oEditor, t_Lxy_PadCenterPosition_n[0], t_Lxy_PadCenterPosition_n[1], "0mil", t_D_Pad + "/2", Tthick_pad, \
+			"sig_pad_" + "n", MaterialColor["Copper_5d8E7"], 0, "Copper_5d8E7")	
+
+	# trace
+	xy = [ ( "(" + t_W_trace + "+" + t_S_trace + ")" + "/2" , "(" + t_Lsize[1] + ")" + "/2" ), \
+		( "(" + t_W_trace + "+" + t_S_trace + ")" + "/2" , "(" + t_PadCenter2PadCenter + "-" +  t_W_trace + "-" + t_S_trace + ")" + "/2" ), \
+		(t_Lxy_PadCenterPosition_p[0], t_Lxy_PadCenterPosition_p[1]) ]
+	x_y = [( xy[0][0] + "*(-1)" , xy[0][1] ), ( xy[1][0] + "*(-1)" , xy[1][1] ), ( xy[2][0] + "*(-1)" , xy[2][1] )]
+
+	addrecttrace( oEditor, [ t_S_trace + "/2", t_Lsize[1] + "/2", "0mil" ],\
+			[ Tthick_pad, t_W_trace ], [ ( xy[0][0], xy[0][1], "0mil"), ( xy[1][0], xy[1][1], "0mil"), ( xy[2][0], xy[2][1], "0mil") ],\
+			"sig_trace_" + "p", MaterialColor["Copper_5d8E7"], 0, "Copper_5d8E7") 
+	addrecttrace( oEditor, [ t_S_trace + "/2*(-1)", t_Lsize[1] + "/2", "0mil" ],\
+			[ Tthick_pad, t_W_trace + "*(-1)" ], [ ( x_y[0][0], x_y[0][1], "0mil"), ( x_y[1][0], x_y[1][1], "0mil"), ( x_y[2][0], x_y[2][1], "0mil") ],\
+			"sig_trace_" + "n", MaterialColor["Copper_5d8E7"], 0, "Copper_5d8E7") 	
+	
+	# soldermask on trace (just on straight diff trace part )
+	creatbox(oEditor, t_S_trace + "/2" + "+" + t_Tpcb_list[0] + "*(-1)" , t_Lsize[1] + "/2", "0mil", \
+			t_Tpcb_list[0] + "*2" + "+" + t_W_trace , \
+			t_Lsize[1] + "/2*(-1)" + "+" + xy[1][1] , \
+			t_Tpcb_list[0] + "*(-1)", \
+			"sm_trace_" + "p", Materialcolor_layer[0], 0.7, PP_Material_layer[0])	
+	creatbox(oEditor, t_S_trace + "/2*(-1)" + "+" + t_Tpcb_list[0] , t_Lsize[1] + "/2", "0mil", \
+			t_Tpcb_list[0] + "*2*(-1)" + "-" + t_W_trace , \
+			t_Lsize[1] + "/2*(-1)" + "+" + xy[1][1] , \
+			t_Tpcb_list[0] + "*(-1)", \
+			"sm_trace_" + "n", Materialcolor_layer[0], 0.7, PP_Material_layer[0])
+
+if t_ShapePad == "1":     # "1" - rectangle
+
+	# pad
+	creatbox(oEditor, t_Lxy_PadCenterPosition_p[0] + "-" +  t_Lpad_AntiShortside + "/2" , \
+			t_Lxy_PadCenterPosition_p[1] + "-" +  t_Lpad_AntiLongside + "/2" ,\
+			"0mil",\
+			t_Lpad_AntiShortside , t_Lpad_AntiLongside , Tthick_pad,\
+			"sig_pad_" + "p", MaterialColor["Copper_5d8E7"], 0, "Copper_5d8E7")	
+	creatbox(oEditor, t_Lxy_PadCenterPosition_n[0] + "-" +  t_Lpad_AntiShortside + "/2" , \
+			t_Lxy_PadCenterPosition_n[1] + "-" +  t_Lpad_AntiLongside + "/2" ,\
+			"0mil",\
+			t_Lpad_AntiShortside , t_Lpad_AntiLongside , Tthick_pad,\
+			"sig_pad_" + "n", MaterialColor["Copper_5d8E7"], 0, "Copper_5d8E7")				
+			
+	# trace
+	xy = [ ( "(" + t_W_trace + "+" + t_S_trace + ")" + "/2" , "(" + t_Lsize[1] + ")" + "/2" ), \
+		( "(" + t_W_trace + "+" + t_S_trace + ")" + "/2" , \
+		t_Lxy_PadCenterPosition_p[1] + "+" + "(" + t_Lpad_AntiLongside + "-" + t_Lpad_AntiShortside + "+" + t_PadCenter2PadCenter + "-" +  t_W_trace + "-" + t_S_trace + ")" + "/2"  ), \
+		( t_Lxy_PadCenterPosition_p[0], \
+		t_Lxy_PadCenterPosition_p[1] + "+" + "(" + t_Lpad_AntiLongside + "-" + t_Lpad_AntiShortside + ")" + "/2"  ) ]
+	x_y = [( xy[0][0] + "*(-1)" , xy[0][1] ), ( xy[1][0] + "*(-1)" , xy[1][1] ), ( xy[2][0] + "*(-1)" , xy[2][1] )]
+
+	addrecttrace( oEditor, [ t_S_trace + "/2", t_Lsize[1] + "/2", "0mil" ],\
+			[ Tthick_pad, t_W_trace ], [ ( xy[0][0], xy[0][1], "0mil"), ( xy[1][0], xy[1][1], "0mil"), ( xy[2][0], xy[2][1], "0mil") ],\
+			"sig_trace_" + "p", MaterialColor["Copper_5d8E7"], 0, "Copper_5d8E7") 
+	addrecttrace( oEditor, [ t_S_trace + "/2*(-1)", t_Lsize[1] + "/2", "0mil" ],\
+			[ Tthick_pad, t_W_trace + "*(-1)" ], [ ( x_y[0][0], x_y[0][1], "0mil"), ( x_y[1][0], x_y[1][1], "0mil"), ( x_y[2][0], x_y[2][1], "0mil") ],\
+			"sig_trace_" + "n", MaterialColor["Copper_5d8E7"], 0, "Copper_5d8E7") 
+
+	# soldermask on trace (just on straight diff trace part )
+	creatbox(oEditor, t_S_trace + "/2" + "+" + t_Tpcb_list[0] + "*(-1)" , t_Lsize[1] + "/2", "0mil", \
+			t_Tpcb_list[0] + "*2" + "+" + t_W_trace , \
+			t_Lsize[1] + "/2*(-1)" + "+" + xy[1][1] , \
+			t_Tpcb_list[0] + "*(-1)", \
+			"sm_trace_" + "p", Materialcolor_layer[0], 0.7, PP_Material_layer[0])	
+	creatbox(oEditor, t_S_trace + "/2*(-1)" + "+" + t_Tpcb_list[0] , t_Lsize[1] + "/2", "0mil", \
+			t_Tpcb_list[0] + "*2*(-1)" + "-" + t_W_trace , \
+			t_Lsize[1] + "/2*(-1)" + "+" + xy[1][1] , \
+			t_Tpcb_list[0] + "*(-1)", \
+			"sm_trace_" + "n", Materialcolor_layer[0], 0.7, PP_Material_layer[0])			
+			
+# __05__ pad and trace  __ and soldermask on trace (just on straight diff trace part )
+
+# __06__ add copper cylinder - like gnd via
+
+if t_ShapePad == "0":     # "0" - circle 
+	t_D_ball = t_D_Pad + "*0.9"
+if t_ShapePad == "1":     # "1" - rectangle
+	t_D_ball = t_Lpad_AntiShortside + "*0.9"
+
+TportZp = "0mil"
+for i,v in enumerate( t_Layertype[1::] ) :
+	if v.lower() not in ["plane","gnd","pwr","power","p","ground"] :
+		TportZp = TportZp + "+" + t_Tpcb_list[1::][i]
+	else :
+		break
+
+refviaposition = [t_PadCenter2PadCenter + "*3/2" , "0mil"]
+createcylinder(oEditor, refviaposition[0] , refviaposition[1] , TportZp, \
+	t_D_ball + "/0.9/2" , "(" + TportZp + ")" + "*(-1)" , \
+	"ref_ball_" + "p", MaterialColor["Copper_5d8E7"], 0, "Copper_5d8E7")
+	
+refviaposition = [t_PadCenter2PadCenter + "*3/2" + "*(-1)" , "0mil"]
+createcylinder(oEditor, refviaposition[0] , refviaposition[1] , TportZp, \
+	t_D_ball + "/0.9/2" , "(" + TportZp + ")" + "*(-1)" , \
+	"ref_ball_" + "n", MaterialColor["Copper_5d8E7"], 0, "Copper_5d8E7")
+
+unite( oEditor, ["ref_plane", "ref_ball_" + "p", "ref_ball_" + "n"], False )	
+
+# __06__ add copper cylinder - like gnd via
+
+# __07____ process struct 2
+
+# copper struct, Unite
+unite( oEditor, ["sig_trace_" + "p", "sig_pad_" + "p"], False )	
+unite( oEditor, ["sig_trace_" + "n", "sig_pad_" + "n"], False )	
+
+# pp struct , and sub copper struct
+for i in PPMaterialList :
+	ppstructs = oEditor.GetObjectsByMaterial( i )
+	
+	unite( oEditor, ppstructs, False )
+			
+	oEditor.ChangeProperty(
+		[
+			"NAME:AllTabs",
+			[
+				"NAME:Geometry3DAttributeTab",
+				[
+					"NAME:PropServers", 
+					ppstructs[0]
+				],
+				[
+					"NAME:ChangedProps",
+					[
+						"NAME:Name",
+						"Value:="		, i + "_Struct"
+					]
+				]
+			]
+		])		
+	# sub copper struct
+	subtract( oEditor, i + "_Struct", ["sig_trace_p", "sig_trace_n", "ref_plane"], True)
+			
+# __07____ process struct 2
+
+############################################################################
+# __08____ add coaxial port
+# step1
+#if t_ShapePad == "0":     # "0" - circle 
+#	t_D_ball = t_D_Pad + "*0.9"
+#if t_ShapePad == "1":     # "1" - rectangle
+#	t_D_ball = t_Lpad_AntiShortside + "*0.9"
+
+pecplane_x = []
+pecplane_y = []
+
+ball_struct = []   # for sub ball struct from pp
+# sig via ball , createcylinder(obj, xP, yP, zP, Rradius, Lheight, Tname, Tcolor, Num_trans, Tmate)
+#  _p ball
+sigviaposition = [ t_PadCenter2PadCenter + "/2", "0mil" ]
+createcylinder(oEditor, sigviaposition[0] , sigviaposition[1] , "0mil", \
+		t_D_ball + "/2" , t_D_ball + "*(-1)" , \
+		"ball_pec_p", "(192 192 192)", 0.7, "pec" )
+
+ball_struct.append("ball_pec_p")
+#  _n ball
+sigviaposition = [ t_PadCenter2PadCenter + "/2" + "*(-1)", "0mil" ]
+createcylinder(oEditor, sigviaposition[0] , sigviaposition[1] , "0mil", \
+		t_D_ball + "/2" , t_D_ball + "*(-1)"  , \
+		"ball_pec_n", "(192 192 192)", 0.7, "pec" )	
+
+ball_struct.append("ball_pec_n")
+
+# ref via ball
+
+TportZp = "0mil"
+for i,v in enumerate( t_Layertype[1::] ) :
+	if v.lower() not in ["plane","gnd","pwr","power","p","ground"] :
+		TportZp = TportZp + "+" + t_Tpcb_list[1::][i]
+	else :
+		break
+
+refviaposition = [t_PadCenter2PadCenter + "*3/2" , "0mil"]
+createcylinder(oEditor, refviaposition[0] , refviaposition[1] , "0mil", \
+	t_D_ball + "/2" , t_D_ball + "*(-1)"  , \
+	"ball_pec_gVp", "(192 192 192)", 0.7, "pec" )
+	
+ball_struct.append("ball_pec_gVp")
+	
+refviaposition = [t_PadCenter2PadCenter + "*3/2" + "*(-1)" , "0mil"]
+createcylinder(oEditor, refviaposition[0] , refviaposition[1] , "0mil", \
+	t_D_ball + "/2" , t_D_ball + "*(-1)"  , \
+	"ball_pec_gVn", "(192 192 192)", 0.7, "pec" )
+	
+ball_struct.append("ball_pec_gVn")
+
+# sub ball struct from pp 
+
+for i in PPMaterialList :
+	ppstructs_ = oEditor.GetObjectsByMaterial( i )
+
+	# sub ball struct
+	subtract( oEditor, ppstructs_[0], ball_struct, True)
+
+# pec plane
+
+pecplane_x_min = t_PadCenter2PadCenter + "*3/2" + "*(-1)" + "-" + t_D_ball
+pecplane_x_max = t_PadCenter2PadCenter + "*3/2" + "+" + t_D_ball
+pecplane_y_min = t_D_ball + "*3/2" + "*(-1)"
+pecplane_y_max = t_D_ball + "*3/2"
+
+# pec plane
+addrect_Z( oEditor, [pecplane_x_min, pecplane_y_min, t_D_ball + "*(-1)"], \
+		["(" + pecplane_x_max + ")" + "-" + "(" + pecplane_x_min + ")" , "(" + pecplane_y_max + ")" + "-" + "(" + pecplane_y_min + ")" ], \
+		"plane_pec", "(192 192 192)", 0.7, "pec" )
+# sub circle
+addcircle_Z( oEditor, t_PadCenter2PadCenter + "/2", "0mil", t_D_ball + "*(-1)", \
+	    t_D_ball + "/2" + "+2.5mil", \
+		"plane_pec_p", "(140 140 140)", 0.5, "vacuum" )		
+addcircle_Z( oEditor, t_PadCenter2PadCenter + "/2" + "*(-1)", "0mil", t_D_ball + "*(-1)", \
+	    t_D_ball + "/2" + "+2.5mil", \
+		"plane_pec_n", "(140 140 140)", 0.5, "vacuum" )			
+		
+subtract(oEditor, "plane_pec", ["plane_pec_n", "plane_pec_p"], True)			
+
+addcircle_Z( oEditor, t_PadCenter2PadCenter + "/2", "0mil", t_D_ball + "*(-1)", \
+	    t_D_ball + "/2", \
+		"plane_pec_p_p", "(140 140 140)", 0.5, "vacuum" )		
+addcircle_Z( oEditor, t_PadCenter2PadCenter + "/2" + "*(-1)", "0mil", t_D_ball + "*(-1)", \
+	    t_D_ball + "/2", \
+		"plane_pec_n_n", "(140 140 140)", 0.5, "vacuum" )	
+
+subtract(oEditor, "plane_pec_n", ["plane_pec_n_n"], False)	
+subtract(oEditor, "plane_pec_p", ["plane_pec_p_p"], False)	
+
+# step2
+oModule = oDesign.GetModule("BoundarySetup")
+# pec Boundary
+oModule.AssignPerfectE(
+	[
+		"NAME:PerfE_plane",
+		"Objects:="		, ["plane_pec"],
+		"InfGroundPlane:="	, False
+	])
+# p port , n port 
+oModule.AutoIdentifyPorts(
+	[
+		"NAME:Faces", 
+		int( oEditor.GetFaceIDs("plane_pec_n")[0] )
+	], False, 
+	[
+		"NAME:ReferenceConductors", 
+		"plane_pec"
+	], "Diffport1_n", True)
+oModule.AutoIdentifyPorts(
+	[
+		"NAME:Faces", 
+		int( oEditor.GetFaceIDs("plane_pec_p")[0] )
+	], False, 
+	[
+		"NAME:ReferenceConductors", 
+		"plane_pec"
+	], "Diffport1_p", True)
+# __08____ add coaxial port
+
+# __09____ add diff wave port
+# step1 add sheet
+
+TportZp = "0mil"
+for i,v in enumerate( t_Layertype[1::] ) :
+	if v.lower() not in ["plane","gnd","pwr","power","p","ground"] :
+		TportZp = TportZp + "+" + t_Tpcb_list[1::][i]
+	else :
+		break
+
+# addrect( oEditor, LCrossSectionXYZ_t, LWandH_t, Tname, Tcolor, Num_trans, Tmate)
+addrect( oEditor, [ t_S_trace + "/2" + "+" + t_W_trace + "+" + t_W_trace + "*" + MsPortXsize , t_Lsize[1] + "/2", TportZp ],\
+		[ t_Tpcb_list[2] + "*" + MsPortYsize + "*(-1)", "(" + t_S_trace + "/2" + "+" + t_W_trace + "+" + t_W_trace + "*" + MsPortXsize + ")" + "*2" + "*(-1)" ], \
+		"Diffport_2", "(140 140 140)", 0.5, "vacuum" )
+
+# step2 Identify Port
+#oModule = oDesign.GetModule("BoundarySetup")
+oModule.AutoIdentifyPorts(
+	[
+		"NAME:Faces", 
+		int( oEditor.GetFaceIDs("Diffport_2")[0] )
+	], True, 
+	[
+		"NAME:ReferenceConductors", 
+		"ref_plane"
+	], "Diffport2", True)
+
+# step3 diff port
+oModule.EditDiffPairs(
+	[
+		"NAME:EditDiffPairs",
+		[
+			"NAME:Pair1",
+			"PosBoundary:="		, "ball_pec_p_T1",
+			"NegBoundary:="		, "ball_pec_n_T1",
+			"CommonName:="		, "Comm1",
+			"CommonRefZ:="		, "25ohm",
+			"DiffName:="		, "Diff1",
+			"DiffRefZ:="		, "100ohm",
+			"IsActive:="		, True,
+			"UseMatched:="		, False
+		],
+		[
+			"NAME:Pair2",
+			"PosBoundary:="		, "sig_trace_p_T1",
+			"NegBoundary:="		, "sig_trace_n_T1",
+			"CommonName:="		, "Comm2",
+			"CommonRefZ:="		, "25ohm",
+			"DiffName:="		, "Diff2",
+			"DiffRefZ:="		, "100ohm",
+			"IsActive:="		, True,
+			"UseMatched:="		, False
+		]
+	])	
+	
+# step4 Deembed
+# leave 10mil trace
+
+t_deembed_length = t_Lsize[1] + "/2" + "-" + "(" + xy[1][1] + ")" + "-10mil"
+
+oDesign.ChangeProperty(
+	[
+		"NAME:AllTabs",
+		[
+			"NAME:HfssTab",
+			[
+				"NAME:PropServers", 
+				"BoundarySetup:Diffport2"
+			],
+			[
+				"NAME:ChangedProps",
+				[
+					"NAME:Deembed",
+					"Value:="		, True
+				]
+			]
+		]
+	])
+oDesign.ChangeProperty(
+	[
+		"NAME:AllTabs",
+		[
+			"NAME:HfssTab",
+			[
+				"NAME:PropServers", 
+				"BoundarySetup:Diffport2"
+			],
+			[
+				"NAME:ChangedProps",
+				[
+					"NAME:Deembed Dist",
+					"Value:="		, t_deembed_length
+				]
+			]
+		]
+	])
+	
+# __09____ add diff wave port
+
+# __10____ airbox
+
+creatbox(oEditor, t_Lsize[0] + "/2" + "*(-1)", t_Lsize[1] + "/2" + "*(-1)", "max(" + AirBoxHSizeaboveTOP + ", " + t_Tpcb_list[2] + "*" + MsPortYsize + ")" + "*(-1)", \
+	t_Lsize[0], t_Lsize[1], "max(" + AirBoxHSizeaboveTOP + ", " + t_Tpcb_list[2] + "*" + MsPortYsize + ")" + "*2" + "+" + Ttotalthick, \
+	"AirBox", "(220 220 220)", 1, "air")
+
+# oModule = oDesign.GetModule("BoundarySetup")
+oModule.AssignRadiation(
+	[
+		"NAME:AirBox",
+		"Objects:="		, ["AirBox"],
+		"IsFssReference:="	, False,
+		"IsForPML:="		, False
+	])
+# __10____ airbox
+
+# __11___ analysis setup
+oModule = oDesign.GetModule("AnalysisSetup")
+# add solution
+oModule.InsertSetup("HfssDriven", 
+	[
+		"NAME:Setup1",
+		"AdaptMultipleFreqs:="	, False,
+		"Frequency:="		, Fsolution,
+		"MaxDeltaS:="		, 0.01,
+		"PortsOnly:="		, False,
+		"UseMatrixConv:="	, False,
+		"MaximumPasses:="	, 15,
+		"MinimumPasses:="	, 1,
+		"MinimumConvergedPasses:=", 2,
+		"PercentRefinement:="	, 30,
+		"IsEnabled:="		, True,
+		"BasisOrder:="		, -1,
+		"DoLambdaRefine:="	, True,
+		"DoMaterialLambda:="	, True,
+		"SetLambdaTarget:="	, False,
+		"Target:="		, 0.6667,
+		"UseMaxTetIncrease:="	, False,
+		"PortAccuracy:="	, 2,
+		"UseABCOnPort:="	, False,
+		"SetPortMinMaxTri:="	, False,
+		"UseDomains:="		, False,
+		"UseIterativeSolver:="	, False,
+		"SaveRadFieldsOnly:="	, False,
+		"SaveAnyFields:="	, False,
+		"IESolverType:="	, "Auto",
+		"LambdaTargetForIESolver:=", 0.15,
+		"UseDefaultLambdaTgtForIESolver:=", True,
+		"RayDensityPerWavelength:=", 4,
+		"MaxNumberOfBounces:="	, 5,
+		"InfiniteSphereSetup:="	, -1
+	])
+# freq sweep
+oModule.InsertFrequencySweep("Setup1", 
+	[
+		"NAME:Sweep",
+		"IsEnabled:="		, True,
+		"RangeType:="		, "LinearCount",
+		"RangeStart:="		, "0GHz",
+		"RangeEnd:="		, Fmax ,
+		"RangeCount:="		, 2001,
+		"Type:="		, "Interpolating",
+		"SaveFields:="		, False,
+		"SaveRadFields:="	, False,
+		"InterpTolerance:="	, 0.5,
+		"InterpMaxSolns:="	, 250,
+		"InterpMinSolns:="	, 0,
+		"InterpMinSubranges:="	, 1,
+		"ExtrapToDC:="		, True,
+		"MinSolvedFreq:="	, "0.01GHz",
+		"InterpUseS:="		, True,
+		"InterpUsePortImped:="	, True,
+		"InterpUsePropConst:="	, True,
+		"UseDerivativeConvergence:=", False,
+		"InterpDerivTolerance:=", 0.2,
+		"UseFullBasis:="	, True,
+		"EnforcePassivity:="	, True,
+		"PassivityErrorTolerance:=", 0.0001,
+		"EnforceCausality:="	, False
+	])
+
+# __11___ analysis setup
+
